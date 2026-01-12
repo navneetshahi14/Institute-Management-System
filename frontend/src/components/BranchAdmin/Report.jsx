@@ -10,32 +10,13 @@ import {
 import { Button } from "../ui/button";
 import { useManagement } from "@/context/ManagementContext";
 import { Input } from "../ui/input";
+import ReportModels from "./Modal/ReportModels";
 
 const Report = () => {
-  const getFacultyPenaltyCount = (faculty) => {
-    const counts = {
-      LATE_START: 0,
-      EARLY_END: 0,
-      BOTH: 0,
-      TOTAL: 0,
-    };
-
-    faculty.lectures.forEach((lec) => {
-      if (!Array.isArray(lec.attendance)) return;
-
-      lec.attendance.forEach((att) => {
-        if (!att.penalty || att.penalty === "NONE") return;
-
-        counts[att.penalty]++;
-        counts.TOTAL++;
-      });
-    });
-
-    return counts;
-  };
-
-  const [role, setRole] = useState(null);
-  const [branch, setBranch] = useState(null);
+  const [user, setUser] = useState({});
+  const [open, setOpen] = useState(false);
+  const [role, setRole] = useState("FACULTY");
+  // const [branch, setBranch] = useState([]);
   const [bran, setBran] = useState({});
 
   const facultyReportHeaders = [
@@ -49,33 +30,73 @@ const Report = () => {
     "Total Penalty",
   ];
 
+  const getCurrentMonthRange = () => {
+    const now = new Date();
+
+    const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+    startOfMonth.setHours(0, 0, 0, 0);
+
+    const endOfMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0);
+    endOfMonth.setHours(23, 59, 59, 999);
+
+    return { startOfMonth, endOfMonth };
+  };
+
+  const getCurrentMonthStaffAttendances = (staffAttendances) => {
+    const { startOfMonth, endOfMonth } = getCurrentMonthRange();
+
+    return staffAttendances.filter((att) => {
+      const attDate = new Date(att.date);
+      return attDate >= startOfMonth && attDate <= endOfMonth;
+    });
+  };
+
+  const getStaffStats = (staffAttendances) => {
+    const currentMonthData = getCurrentMonthStaffAttendances(staffAttendances);
+
+    return currentMonthData.reduce(
+      (acc, att) => {
+        acc.daysPresent += 1;
+
+        if (att.isLate) {
+          acc.lateDays += 1;
+          acc.totalLateMinutes += att.lateMinutes || 0;
+        }
+
+        acc.totalOvertimeMinutes += att.overtimeMinutes || 0;
+        acc.totalOvertimePay += att.overtimePay || 0;
+        acc.totalPenalty += att.totalPenalty || 0;
+
+        return acc;
+      },
+      {
+        daysPresent: 0,
+        lateDays: 0,
+        totalLateMinutes: 0,
+        totalOvertimeMinutes: 0,
+        totalOvertimePay: 0,
+        totalPenalty: 0,
+      }
+    );
+  };
+
   const [facultyReportData, setFacultyReportData] = useState([]);
   const [staffReportData, setStaffReportData] = useState([]);
   const { fetchUser, fetchBranch } = useManagement();
 
-  useEffect(() => {
-    const tok = JSON.parse(localStorage.getItem("user"));
-    const branch = tok.data.user.branch;
-
-    setBran(branch);
-
-    const loadData = async () => {
-      const branchdata = await fetchBranch();
-
-      setBranch(branchdata);
-    };
-    loadData();
-  }, []);
+  useEffect(()=>{
+    const branch = JSON.parse(localStorage.getItem("user")).data.user.branch
+    setBran(branch)
+  },[])
 
   useEffect(() => {
-    console.log(role);
     if (role === "FACULTY") {
       const loadData = async () => {
         const data = await fetchUser();
         let filterData = data.filter((user) => user.role === "FACULTY");
         if (bran) {
           const fdata = filterData.filter((user) => user.branchId === bran.id);
-          // console.log("fdata",fdata)
+          console.log(fdata);
           setFacultyReportData(fdata);
         } else {
           setFacultyReportData(filterData);
@@ -90,9 +111,9 @@ const Report = () => {
         const filterData = data.filter((user) => user.role === "STAFF");
         if (bran) {
           const fdata = filterData.filter((user) => user.branchId === bran.id);
-          console.log("fdata", fdata);
           setStaffReportData(fdata);
         } else {
+          console.log(filterData);
           setStaffReportData(filterData);
         }
       };
@@ -105,130 +126,137 @@ const Report = () => {
     "Staff Name",
     "Days Present",
     "Late Days",
+    "Total Late Minutes",
     "Total Overtime (mins)",
     "Overtime Pay (₹)",
+    "Total Penalty",
   ];
 
+  const getLectureAttendanceStats = (lectures) => {
+    let conducted = 0;
+    let late = 0;
+    let early = 0;
+    let both = 0;
+    let totalPenalty = 0;
+    let totalScheduled = 0;
+
+    lectures.forEach((lec) => {
+      totalScheduled += lec.TotalScheduled || 0;
+
+      lec.attendance.forEach((att) => {
+        conducted++;
+
+        if (att.penalty === "LATE_START") late++;
+        if (att.penalty === "EARLY_END") early++;
+        if (att.penalty === "BOTH") both++;
+        if (att.penalty !== "NONE") totalPenalty++;
+      });
+    });
+
+    return {
+      conducted,
+      remaining: totalScheduled - conducted,
+      late,
+      early,
+      both,
+      totalPenalty,
+    };
+  };
+
   return (
-    <div className=" rounded h-[91%] bg-white m-2 overflow-hidden p-4">
-      <div className="flex gap-4 border-b-2 pb-2">
-        <p className="text-xl font-semibold">Filter: </p>
-        <Select onValueChange={(v) => setRole(v)}>
-          <SelectTrigger default={"FACULTY"} className={`w-45`}>
-            <SelectValue placeholder={"Role"} />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value={`FACULTY`}>Faculty</SelectItem>
-            <SelectItem value={`STAFF`}>Staff</SelectItem>
-          </SelectContent>
-        </Select>
+    <>
+      <div className=" rounded h-[91%] bg-white m-2 overflow-hidden p-4">
+        <div className="flex gap-4 border-b-2 pb-2">
+          <p className="text-xl font-semibold">Filter: </p>
+          <Select value={role} onValueChange={(v) => setRole(v)}>
+            <SelectTrigger className={`w-45`}>
+              <SelectValue placeholder={"Role"} />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value={`FACULTY`}>Faculty</SelectItem>
+              <SelectItem value={`STAFF`}>Staff</SelectItem>
+            </SelectContent>
+          </Select>
 
-        {/* <Select onValueChange={(v)=>setBran(v)}>
-          <SelectTrigger className={`w-45`}>
-            <SelectValue placeholder={"Branch"} />
-          </SelectTrigger>
-          <SelectContent>
-            {
-              branch.map((item,i)=>(
-                <SelectItem key={i} value={item.id}>{item.name}</SelectItem>
-
-              ))
-            }
-            <SelectItem value={null}>None</SelectItem>
-          </SelectContent>
-        </Select> */}
-        <Input type={`text`} value={bran.name} className={`w-44`} />
-      </div>
-      {role === "STAFF" && (
-        <div className="w-full h-[94%] overflow-auto ">
-          <ul className="grid grid-cols-[100px_250px_150px_150px_140px_140px] xl:grid-cols-6 px-4 py-3 xl:border-b border-gray-500 font-bold text-center">
-            {staffReportHeaders.map((item, index) => (
-              <li key={index}>{item}</li>
-            ))}
-          </ul>
-
-          {staffReportData.map((staff, index) => (
-            <ul
-              key={index}
-              className="grid grid-cols-[100px_250px_150px_150px_140px_140px] xl:grid-cols-6 px-4 py-3 xl:border-b border-gray-500 text-center items-center hover:bg-gray-50"
-            >
-              <li className="font-semibold">{index + 1}</li>
-              <li>{staff.name}</li>
-              <li>{staff.staffAttendances.length}</li>
-              <li>
-                {staff.staffAttendances.filter((data) => data.isLate === true)
-                  .length || 0}
-              </li>
-              <li>
-                {staff.staffAttendances.reduce(
-                  (count, overtime) => count + (overtime.overtimeMinutes || 0),
-                  0
-                ) || "-"}
-              </li>
-              <li className="text-green-600 font-semibold">
-                ₹
-                {staff.staffAttendances.reduce(
-                  (count, overtime) => count + (overtime.overtimePay || 0),
-                  0
-                ) || "0"}
-              </li>
+          <Input value={bran.name} placeholder={`Branch`} readOnly />
+        </div>
+        {role === "STAFF" && (
+          <div className="h-[92%] w-full overflow-auto xl:overflow-x-hidden">
+            <ul className="grid grid-cols-[60px_180px_260px_220px_140px_140px_140px_140px] xl:grid-cols-8  px-4 py-3 xl:border-b border-gray-500 font-bold text-center">
+              {staffReportHeaders.map((item, index) => (
+                <li key={index}>{item}</li>
+              ))}
             </ul>
-          ))}
-        </div>
-      )}
-      {role === "FACULTY" && (
-        <div className="w-full h-[95%] overflow-auto">
-          <ul className="grid grid-cols-[100px_250px_150px_150px_140px_140px_160px_140px] xl:grid-cols-8 px-4 py-3 xl:border-b border-gray-500 font-bold text-center">
-            {facultyReportHeaders.map((item, index) => (
-              <li key={index}>{item}</li>
-            ))}
-          </ul>
 
-          {facultyReportData.map((staff, index) => {
-            const penalty = getFacultyPenaltyCount(staff)
-            return (
-              <ul
-                key={index}
-                className="grid grid-cols-[100px_250px_150px_150px_140px_140px_160px_140px] xl:grid-cols-8 px-4 py-3 xl:border-b border-gray-500 text-center items-center hover:bg-gray-50"
-              >
-                <li className="font-semibold">{index + 1}</li>
-                <li>{staff.name}</li>
-                <li>
-                  {staff.lectures.reduce(
-                    (count, lec) => count + (lec.attendance ? 1 : 0),
-                    0
-                  ) || 0}
-                </li>
-                <li>
-                  {staff?.lectures.reduce(
-                    (sum, lec) => sum + (lec?.TotalScheduled || 0),
-                    0
-                  ) -
-                    staff.lectures.reduce(
-                      (count, lec) => count + (lec.attendance ? 1 : 0),
-                      0
-                    ) || "-"}
-                </li>
-                <li>
-                  {penalty.LATE_START || 0}
-                </li>
-                <li>
-                  {penalty.EARLY_END || 0}
-                </li>
-                <li>
-                  {penalty.BOTH || 0}
-                </li>
-                <li>
-                  {
-                    penalty.TOTAL || 0
-                  }
-                </li>
-              </ul>
-            );
-          })}
-        </div>
-      )}
-    </div>
+            {staffReportData.map((staff, index) => {
+              const stats = getStaffStats(staff.staffAttendances);
+              return (
+                <ul
+                  onClick={() => {
+                    setOpen(true);
+                    setUser(staff);
+                  }}
+                  key={index}
+                  className="grid grid-cols-[60px_180px_260px_220px_140px_140px_140px_140px] xl:grid-cols-8 px-4 py-3 xl:border-b border-gray-500 text-center items-center hover:bg-gray-50"
+                >
+                  <li className="font-semibold">{index + 1}</li>
+                  <li>{staff.name}</li>
+                  <li>{stats.daysPresent}</li>
+                  <li>{stats.lateDays}</li>
+                  <li>{stats.totalLateMinutes}</li>
+                  <li>{stats.totalOvertimeMinutes}</li>
+                  <li className="text-green-600 font-semibold">
+                    ₹{stats.totalOvertimePay}
+                  </li>
+                  <li className="text-red-600 font-semibold">
+                    ₹{stats.totalPenalty}
+                  </li>
+                </ul>
+              );
+            })}
+          </div>
+        )}
+        {role === "FACULTY" && (
+          <div className=" h-[94%] w-full overflow-auto">
+            <ul className="grid grid-cols-[60px_180px_260px_220px_140px_140px_120px_100px] xl:grid-cols-8  px-4 py-3 xl:border-b xl:border-gray-500 font-bold text-center">
+              {facultyReportHeaders.map((item, index) => (
+                <li key={index}>{item}</li>
+              ))}
+            </ul>
+
+            {facultyReportData.map((staff, index) => {
+              const stats = getLectureAttendanceStats(staff.lectures);
+              return (
+                <ul
+                  onClick={() => {
+                    setOpen(true);
+                    setUser(staff);
+                  }}
+                  key={index}
+                  className="grid grid-cols-[60px_180px_260px_220px_140px_140px_120px_100px] xl:grid-cols-8 px-4 py-3 xl:border-b xl:border-gray-500 text-center items-center hover:bg-gray-50"
+                >
+                  <li className="font-semibold">{index + 1}</li>
+                  <li>{staff.name}</li>
+                  <li>{stats.conducted}</li>
+                  <li>{stats.remaining}</li>
+                  <li>{stats.late}</li>
+                  <li>{stats.early}</li>
+                  <li>{stats.both}</li>
+                  <li>{stats.totalPenalty}</li>
+                </ul>
+              );
+            })}
+          </div>
+        )}
+      </div>
+
+      <ReportModels
+        open={open}
+        setOpen={setOpen}
+        user={user}
+        setUser={setUser}
+      />
+    </>
   );
 };
 

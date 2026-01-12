@@ -28,7 +28,7 @@ router.get(
 router.put(
     "/:id",
     protect,
-    requireRole("SUPER_ADMIN"),
+    requireRole("SUPER_ADMIN","BRANCH_ADMIN"),
     courseController.updateCourseById
 )
 

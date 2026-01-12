@@ -1,9 +1,10 @@
 import React, { useEffect, useState } from "react";
 import { Button } from "../ui/button";
-import CourseModels from "./Models/CourseModels";
+// import CourseModels from "./Models/CourseModels";
 import axios from "axios";
 import { mainRoute } from "../apiroute";
 import ActionBtn from "../BranchAdmin/ActionBtn";
+import CourseModels from "./Modal/CourseModels";
 
 const CourseManagement = () => {
   const [open, setOpen] = useState(false);
@@ -22,7 +23,9 @@ const CourseManagement = () => {
 
   const fetchCourse = async () => {
     try {
-      const tok = JSON.parse(localStorage.getItem("user")).data.token;
+      const token = JSON.parse(localStorage.getItem("user"));
+      const tok = token.data.token;
+      const branchId = token.data.user.branchId;
 
       const { data } = await axios.get(`${mainRoute}/api/courses`, {
         headers: {
@@ -30,8 +33,8 @@ const CourseManagement = () => {
           Authorization: `Bearer ${tok}`,
         },
       });
-
-      setCourses(data.data);
+      const filterData = data.data.filter((co) => co.branchId === branchId)
+      setCourses(filterData);
     } catch (err) {
       console.log(err.message);
     }
@@ -67,20 +70,29 @@ const CourseManagement = () => {
           </ul>
           {courses.length > 0 ? (
             courses.map((cour, i) => {
-              console.log(cour.branch)
               return (
                 <ul
                   key={i}
                   className={`grid grid-cols-${lists.length} text-sm xl:text-[1rem] px-4 py-3 border-b border-gray-500 text-center items-center hover:bg-gray-100`}
                 >
-                    <li>{i + 1}</li>
-                    <li>{cour?.name}</li>
-                    <li>{cour?.batches?.length}</li>
-                    <li>{cour?.branch?.name}</li>
-                    <li>{cour?.branch?.users?.filter((user)=>user.role === "BRANCH_ADMIN").find((user)=>user.branchId === cour.branchId).name || "-"}</li>
-                    <li>
-                        <ActionBtn setOp={setOpen} setType={setType} lecu={cour} setlecture={setCourse} />
-                    </li>
+                  <li>{i + 1}</li>
+                  <li>{cour?.name}</li>
+                  <li>{cour?.batches?.length}</li>
+                  <li>{cour?.branch?.name}</li>
+                  <li>
+                    {cour?.branch?.users
+                      ?.filter((user) => user.role === "BRANCH_ADMIN")
+                      .find((user) => user.branchId === cour.branchId).name ||
+                      "-"}
+                  </li>
+                  <li>
+                    <ActionBtn
+                      setOp={setOpen}
+                      setType={setType}
+                      lecu={cour}
+                      setlecture={setCourse}
+                    />
+                  </li>
                 </ul>
               );
             })
@@ -92,7 +104,7 @@ const CourseManagement = () => {
         </div>
       </div>
 
-      <CourseModels open={open} setOpen={setOpen} course={course} type={type} refetch={fetchCourse} />
+      <CourseModels open={open} setOpen={setOpen} course={course} type={type} refetch={fetchCourse}  />
     </>
   );
 };

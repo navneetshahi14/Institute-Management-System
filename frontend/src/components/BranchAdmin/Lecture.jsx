@@ -22,48 +22,6 @@ const Lecture = () => {
     "Actions",
   ];
 
-  // const branchLectureData = [
-  //   {
-  //     id: 1,
-  //     startDate: "2025-01-01",
-  //     endDate: "2025-01-15",
-  //     subject: "Mathematics",
-  //     faculty: "Rahul Mehta",
-  //     time: ["10:00","11:00"],
-  //     status: "Conducted",
-  //     penalty: "None",
-  //   },
-  //   {
-  //     id: 2,
-  //     startDate: "2025-01-03",
-  //     endDate: "2025-01-20",
-  //     subject: "Physics",
-  //     faculty: "Ankit Verma",
-  //     time: ["11:00","12:00"],
-  //     status: "Conducted",
-  //     penalty: "Late Start",
-  //   },
-  //   {
-  //     id: 3,
-  //     startDate: "2025-01-05",
-  //     endDate: "2025-01-25",
-  //     subject: "Chemistry",
-  //     faculty: "Neha Sharma",
-  //     time: ["09:30","10:30"],
-  //     status: "Planned",
-  //     penalty: "-",
-  //   },
-  //   {
-  //     id: 4,
-  //     startDate: "2025-01-02",
-  //     endDate: "2025-01-10",
-  //     subject: "Computer Science",
-  //     faculty: "Pooja Singh",
-  //     time: ["02:00","03:00"],
-  //     status: "Missed",
-  //     penalty: "Both",
-  //   },
-  // ];
 
   const [branchLectureData,setBranchLectureData] = useState([])
 
@@ -84,7 +42,7 @@ const Lecture = () => {
    const userDate = await fetchLecture();
    console.log(userDate)
    const filterData = userDate
-     .filter((user) => user.batch.branchId === branchId);
+     .filter((user) => user.batch.course.branchId === branchId);
    console.log(filterData)
    setBranchLectureData(filterData);
  };

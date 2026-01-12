@@ -92,6 +92,8 @@ const promoteToBranchAdmin = async (req, res) => {
   try {
     const { userId, branchId } = req.body;
 
+    console.log(userId)
+
     if (!userId || !branchId) {
       return res.status(400).json({ message: "userId and branchId required" });
     }

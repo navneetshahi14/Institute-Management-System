@@ -151,7 +151,7 @@ model FacultyAttendance {
   facultyId Int
   faculty   User @relation(fields: [facultyId], references: [id])
 
-  date           DateTime
+  date           DateTime @default(now())
   inTime         DateTime
   outTime        DateTime?
   workingMinutes Int       @default(0)

@@ -25,6 +25,11 @@ const BranchNavbar = ({ open, setOpen }) => {
       link: "/branchadmin/staff",
     },
     {
+      name:"Course Management",
+      icon:"",
+      link:"/branchadmin/coursemanage"
+    },
+    {
       name:"Batch Management",
       icon:"",
       link:"/branchadmin/batchmanage"

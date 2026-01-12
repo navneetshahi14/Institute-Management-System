@@ -1,8 +1,9 @@
-'use client'
+"use client";
 import { mainRoute } from "@/components/apiroute";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import axios from "axios";
+import { Eye, EyeOff } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import React, { useState } from "react";
@@ -11,6 +12,8 @@ import { toast } from "sonner";
 const Login = () => {
   const [phoneNumber, setPhoneNumber] = useState("");
   const [password, setPassword] = useState("");
+
+  const [showPass, setShowPass] = useState(false);
 
   const router = useRouter();
 
@@ -28,7 +31,7 @@ const Login = () => {
 
       localStorage.setItem("user", JSON.stringify(data));
       router.push("/");
-      toast.success("Login Successful")
+      toast.success("Login Successful");
     } catch (error) {
       toast.error(error.response?.data?.message || "Login failed");
     }
@@ -44,10 +47,32 @@ const Login = () => {
         <div className="flex flex-col gap-3 w-[90%] mt-10 ">
           <h1 className="text-center text-3xl mb-10 font-semibold">Login</h1>
 
-          <Input type={`text`} onChange={(e)=>setPhoneNumber(e.target.value)} placeholder={`Enter Your Phone Number`} />
-          <Input type={`password`} onChange={(e)=>setPassword(e.target.value)} placeholder={`Enter Your Password`} />
+          <Input
+            type={`text`}
+            inputType={`numeric`}
+            maxLength={10}
+            onChange={(e) => setPhoneNumber(e.target.value)}
+            placeholder={`Enter Your Phone Number`}
+          />
+          <div className="relative">
+            <Input
+              type={`${showPass ? "text" : "password"}`}
+              placeholder={"Enter Your Password"}
+              onChange={(e) => setPassword(e.target.value)}
+            />
+            <Button
+              onClick={() => setShowPass(!showPass)}
+              className={`absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-black bg-transparent hover:bg-transparent `}
+            >
+              {!showPass ? <Eye size={10} /> : <EyeOff size={10} />}
+            </Button>
+          </div>
 
-          <Button variant="secondary" onClick={handleLogin} className={`cursor-pointer my-10`}>
+          <Button
+            variant="secondary"
+            onClick={handleLogin}
+            className={`cursor-pointer my-10`}
+          >
             Login
           </Button>
         </div>
@@ -58,13 +83,17 @@ const Login = () => {
               <span className="text-blue-700 cursor-pointer font-semibold">
                 Admin
               </span>
-            
             </a>
           </p>
         </div>
         <div className="mt-5">
           <p className="text-sm">
-            <span onClick={()=>router.push('/register')}  className="text-blue-700 cursor-pointer font-semibold">Register</span>
+            <span
+              onClick={() => router.push("/register")}
+              className="text-blue-700 cursor-pointer font-semibold"
+            >
+              Register
+            </span>
           </p>
         </div>
       </div>

@@ -18,26 +18,29 @@ import { toast } from "sonner";
 
 const FacultyModal = ({ open, setOpen }) => {
   const router = useRouter();
-  const { fetchBranch, fetchUser, fetchSubject, fetchLecture } =
+  const { fetchBranch, fetchUser, fetchSubject, fetchLecture, fetchCourse } =
     useManagement();
 
-    const [batch,setBatch] = useState([])
+  const [batch, setBatch] = useState([]);
+  const [courses, setCourses] = useState([]);
 
   const [status, setStatus] = useState(null);
   const [payout, setPayout] = useState(0);
 
-  const [selectedBatch,setSelectedBatch] = useState(null)
+  const [selectedBatch, setSelectedBatch] = useState(null);
 
   const [branchs, setBranch] = useState({});
   const [branchid, setBranchId] = useState(null);
   const [users, setUser] = useState([]);
   const [subject, setSubject] = useState([]);
-  const [facultyId, setFacultyId] = useState(null);
-  const [subjectId, setSubjectId] = useState(null);
+  const [facultyId, setFacultyId] = useState({});
+  const [subjectId, setSubjectId] = useState({});
   const [startTime, setStartTime] = useState(null);
   const [endTime, setEndTime] = useState(null);
   const [actualIn, setActualIn] = useState(null);
   const [actualOut, setActualOut] = useState(null);
+  const [facultyType, setFacultyType] = useState(null);
+  const [course, setCourse] = useState(null);
 
   const formatTime = (isoTime) => {
     return new Date(isoTime).toLocaleTimeString("en-IN", {
@@ -63,59 +66,60 @@ const FacultyModal = ({ open, setOpen }) => {
     loadData();
   }, []);
 
-  useEffect(()=>{
+  const fetchBatch = async () => {
     let tok = JSON.parse(localStorage.getItem("user"));
     let token = tok.data.token;
-    const fetchBatch = async () => {
-      const { data } = await axios.get(`${mainRoute}/api/batch`, {
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
-      });
+    const { data } = await axios.get(`${mainRoute}/api/batch`, {
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
+      },
+    });
 
-      const filtereddata = data.data.filter(
-        (batch) => batch.branchId === branchid
-      );
-      // console.log(filtereddata);
-      setBatch(filtereddata);
+    const filtereddata = data.data.filter(
+      (batch) => batch.course.branchId === branchid
+    );
+    // console.log(filtereddata);
+    setBatch(filtereddata);
+  };
+  useEffect(() => {
+    const loadData = async () => {
+      const data = await fetchCourse();
+      setCourses(data);
     };
+    loadData();
+  }, [branchid]);
 
+  useEffect(() => {
     fetchBatch();
-
-  },[branchid])
-
-    // useEffect(() => {
-    //   const loadData = async () => {
-    //     const userData = await fetchUser();
-    //     const facultyOnly = userData.filter((user) => user.role === "FACULTY");
-    //     console.log(facultyOnly);
-    //     setUsers(facultyOnly);
-    //     setFilteredFaculty(facultyOnly);
-    //   };
-    //   loadData();
-    // }, [selectedBatch]);
+  }, [course]);
 
   useEffect(() => {
     const loadData = async () => {
       const lecturedata = await fetchLecture();
+      console.log(lecturedata);
 
-      const filterlecture = lecturedata.filter(
-        (lec) => lec.faculty.id === Number(facultyId)
-      ).filter((lec)=> lec.batch.id === selectedBatch);
+      const filterlecture = lecturedata
+        .filter((lec) => lec.faculty.id === Number(facultyId.id))
+        .filter((lec) => lec.batchId === selectedBatch);
+
+      // selectedBatch
       console.log(filterlecture);
 
       setSubject(filterlecture);
     };
+    setFacultyType(facultyId.facultyType);
 
     loadData();
-  }, [facultyId]);
+  }, [facultyId, selectedBatch]);
 
   const [lect, setLect] = useState({});
 
   useEffect(() => {
     const loadData = async () => {
-      const findplanned = subject.find((item) => item.subjectId === subjectId);
+      const findplanned = subject.find(
+        (item) => item.subjectId === subjectId.id
+      );
       console.log(findplanned);
       setLect(findplanned);
       setStartTime(findplanned?.startTime);
@@ -126,6 +130,13 @@ const FacultyModal = ({ open, setOpen }) => {
 
   const FIFTEEN_MIN = 15 * 60 * 1000;
 
+  useEffect(() => {
+    if (facultyType === "SALARY_BASED") {
+      setStartTime((facultyId.shiftStartTime));
+      setEndTime((facultyId.shiftEndTime));
+    }
+  }, [facultyType]);
+
   const calculateFacultyPenaltyUI = ({
     plannedStart,
     plannedEnd,
@@ -133,7 +144,6 @@ const FacultyModal = ({ open, setOpen }) => {
     actualEnd,
     lectureAmount,
   }) => {
-
     let isLate = false;
     let isEarly = false;
 
@@ -171,27 +181,53 @@ const FacultyModal = ({ open, setOpen }) => {
 
   const lectureAmount = 500;
 
-  useEffect(() => {
-    if (!startTime || !endTime || !actualIn || !actualOut) return;
-    const start = startTime.split("T")[0];
-    const end = endTime.split("T")[0];
+  // useEffect(() => {
+  //   if (!startTime || !endTime || !actualIn || !actualOut) return;
+  //   const start = startTime.split("T")[0];
+  //   const end = endTime.split("T")[0];
 
-    const result = calculateFacultyPenaltyUI({
-      plannedStart: new Date(startTime),
-      plannedEnd: new Date(endTime),
-      actualStart: new Date(`${start}T${actualIn}`),
-      actualEnd: new Date(`${end}T${actualOut}`),
-      // isCancelledNoStudents: cancelled,
-      lectureAmount,
+  //   const result = calculateFacultyPenaltyUI({
+  //     plannedStart: new Date(startTime),
+  //     plannedEnd: new Date(endTime),
+  //     actualStart: new Date(`${start}T${actualIn}`),
+  //     actualEnd: new Date(`${end}T${actualOut}`),
+  //     // isCancelledNoStudents: cancelled,
+  //     lectureAmount,
+  //   });
+
+  //   setPenaltyPreview(result);
+  // }, [startTime, endTime, actualIn, actualOut]);
+
+  useEffect(() => {
+    if (
+      !subjectId.startTime ||
+      !subjectId.endTime ||
+      !actualIn ||
+      !actualOut ||
+      !status
+    )
+      return;
+
+    const date = subjectId.startTime.split("T")[0];
+
+    const result = calculateLectureBasedFaculty({
+      plannedStart: new Date(subjectId.startTime),
+      plannedEnd: new Date(subjectId.endTime),
+      actualStart: new Date(`${date}T${actualIn}`),
+      actualEnd: new Date(`${date}T${actualOut}`),
+      lectureRate: facultyId.lectureRate,
     });
 
+    const finalPayout = applyStatusOnPayout(result.calculatedPayout, status);
+
     setPenaltyPreview(result);
-  }, [startTime, endTime, actualIn, actualOut]);
+    setPayout(finalPayout);
+  }, [subjectId, actualIn, actualOut, status]);
 
   const settingpayout = async () => {
     const userdata = await fetchUser();
 
-    const filterdata = userdata.find((user) => user.id === facultyId);
+    const filterdata = userdata.find((user) => user.id === facultyId.id);
 
     if (status === "CONDUCTED") {
       setPayout(filterdata.salary);
@@ -205,12 +241,11 @@ const FacultyModal = ({ open, setOpen }) => {
   };
 
   useEffect(() => {
-    settingpayout();
+    // settingpayout();
   }, [status]);
 
   const markAttendance = async () => {
-    try{
-
+    try {
       let tokn = JSON.parse(localStorage.getItem("user"));
       let token = tokn.data.token;
       let today = new Date().toISOString().split("T")[0];
@@ -220,6 +255,8 @@ const FacultyModal = ({ open, setOpen }) => {
           lectureId: lect.id,
           actualStartTime: `${today}T${actualIn}`,
           actualEndTime: `${today}T${actualOut}`,
+          status: status,
+          payout: payout,
         },
         {
           headers: {
@@ -228,14 +265,46 @@ const FacultyModal = ({ open, setOpen }) => {
           },
         }
       );
-  
+
       toast.success("Attendance Marked Successfully");
       setOpen(false);
-      router.refresh() 
-    }catch(err){
-      toast.error("Error in marking attendance")
+      router.refresh();
+    } catch (err) {
+      toast.error("Error in marking attendance");
       setOpen(false);
-      router.refresh()
+      router.refresh();
+    }
+  };
+
+  const markSalaryBasedAttendance = async () => {
+    try {
+      let tok = JSON.parse(localStorage.getItem("user")).data.token;
+      let today = new Date();
+
+      const { data } = axios.post(
+        `${mainRoute}/api/attendance/faculty/attendance/mark`,
+        {
+          facultyId: selectFaculty.id,
+          date: today,
+          inTime: inTime,
+          outTime: outTime,
+          isLeave: status,
+        },
+        {
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${tok}`,
+          },
+        }
+      );
+
+      toast.success("Attendance Marked Successfully");
+      setOpen(false);
+      router.refresh();
+    } catch (err) {
+      toast.error("Error in marking attendance");
+      setOpen(false);
+      router.refresh();
     }
   };
 
@@ -264,22 +333,6 @@ const FacultyModal = ({ open, setOpen }) => {
               </div>
 
               <div className="">
-                <Label>Batch</Label>
-                <Select onValueChange={(v) => setSelectedBatch(v)}>
-                  <SelectTrigger className={`w-full`}>
-                    <SelectValue placeholder={`Batch`} />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {batch.map((item, i) => (
-                      <SelectItem key={i} value={item.id}>
-                        {item.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-
-              <div className="">
                 <Label>Faculty Name</Label>
                 <Select onValueChange={(v) => setFacultyId(v)}>
                   <SelectTrigger className={`w-full`}>
@@ -287,7 +340,7 @@ const FacultyModal = ({ open, setOpen }) => {
                   </SelectTrigger>
                   <SelectContent>
                     {users.map((item, i) => (
-                      <SelectItem key={i} value={item.id}>
+                      <SelectItem key={i} value={item}>
                         {item.name}
                       </SelectItem>
                     ))}
@@ -295,21 +348,57 @@ const FacultyModal = ({ open, setOpen }) => {
                 </Select>
               </div>
 
-              <div>
-                <Label>Subject</Label>
-                <Select onValueChange={(v) => setSubjectId(v)}>
-                  <SelectTrigger className={`w-full`}>
-                    <SelectValue placeholder={`Subject`} />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {subject.map((item, i) => (
-                      <SelectItem value={item.subject.id} key={i}>
-                        {item.subject.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
+              {facultyType === "LECTURE_BASED" && (
+                <>
+                  <div>
+                    <Label>Course</Label>
+                    <Select onValueChange={(v) => setCourse(v)}>
+                      <SelectTrigger className={`w-full`}>
+                        <SelectValue placeholder={`Course`} />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {courses.map((item, i) => (
+                          <SelectItem key={i} value={item.id}>
+                            {item.name}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  <div className="">
+                    <Label>Batch</Label>
+                    <Select onValueChange={(v) => setSelectedBatch(v)}>
+                      <SelectTrigger className={`w-full`}>
+                        <SelectValue placeholder={`Batch`} />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {batch.map((item, i) => (
+                          <SelectItem key={i} value={item.id}>
+                            {item.name}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  <div>
+                    <Label>Subject</Label>
+                    <Select onValueChange={(v) => setSubjectId(v)}>
+                      <SelectTrigger className={`w-full`}>
+                        <SelectValue placeholder={`Subject`} />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {subject.map((item, i) => (
+                          <SelectItem value={item.subject} key={i}>
+                            {item.subject.name}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </>
+              )}
 
               <div>
                 <Label>Status</Label>
@@ -318,59 +407,77 @@ const FacultyModal = ({ open, setOpen }) => {
                     <SelectValue placeholder={`Status`} />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value={`CONDUCTED`}>Conducted</SelectItem>
-                    <SelectItem value={`CANCELLED`}>Cancelled</SelectItem>
-                    <SelectItem value={`MISSED`}>Missed</SelectItem>
+                    {facultyType === "LECTURE_BASED" ? (
+                      <SelectContent>
+                        <SelectItem value={`CONDUCTED`}>Conducted</SelectItem>
+                        <SelectItem value={`CANCELLED`}>Cancelled</SelectItem>
+                        <SelectItem value={`MISSED`}>Missed</SelectItem>
+                      </SelectContent>
+                    ) : (
+                      <SelectContent>
+                        <SelectItem value={false}>Present</SelectItem>
+                        <SelectItem value={true}>On Leave</SelectItem>
+                      </SelectContent>
+                    )}
                   </SelectContent>
                 </Select>
               </div>
 
-              <div>
-                <Label>Payout</Label>
-                <Input
-                  value={payout}
-                  readOnly
-                  placeholder={`Payout`}
-                  onChange={(e) => setPayout(e.target.value)}
-                />
-              </div>
+              {(status === "CONDUCTED" || facultyType === "SALARY_BASED") && (
+                <>
+                  <div>
+                    <Label>Planned Time</Label>
+                    {/* <input type="time" value="10:30" readOnly />  */}
+                    <Input
+                      type={`text`}
+                      value={`${formatTime(startTime)} - ${formatTime(
+                        endTime
+                      )}`}
+                      readOnly
+                    />
+                  </div>
 
-              <div>
-                <Label>Planned Time</Label>
-                {/* <input type="time" value="10:30" readOnly />  */}
-                <Input
-                  type={`text`}
-                  value={`${formatTime(startTime)} - ${formatTime(endTime)}`}
-                  readOnly
-                />
-              </div>
+                  <div>
+                    <div>
+                      <Label>In Time</Label>
+                      <Input
+                        type={`time`}
+                        onChange={(e) => setActualIn(e.target.value)}
+                      />
+                    </div>
+                    <div>
+                      <Label>Out Time</Label>
+                      <Input
+                        type={`time`}
+                        onChange={(e) => setActualOut(e.target.value)}
+                      />
+                    </div>
+                  </div>
+                </>
+              )}
 
-              <div>
-                <div>
-                  <Label>In Time</Label>
-                  <Input
-                    type={`time`}
-                    onChange={(e) => setActualIn(e.target.value)}
-                  />
-                </div>
-                <div>
-                  <Label>Out Time</Label>
-                  <Input
-                    type={`time`}
-                    onChange={(e) => setActualOut(e.target.value)}
-                  />
-                </div>
-              </div>
-
-              <div>
-                <Label>Penalty</Label>
-                <Input
-                  type={`text`}
-                  placeholder={`Penalty`}
-                  readOnly
-                  value={penaltyPreview?.message || "0"}
-                />
-              </div>
+              {facultyType === "LECTURE_BASED" && (
+                <>
+                  <div>
+                    <Label>Payout</Label>
+                    <Input
+                      value={payout}
+                      readOnly
+                      placeholder={`Payout`}
+                      onChange={(e) => setPayout(e.target.value)}
+                    />
+                  </div>
+                  <div>
+                    <Label>Penalty</Label>
+                    <Input
+                      type={`text`}
+                      placeholder={`Penalty`}
+                      readOnly
+                      value={penaltyPreview?.message || "0"}
+                    />
+                  </div>
+                </>
+              )}
 
               <div className="flex-row! w-full [&>Button]:cursor-pointer">
                 <Button

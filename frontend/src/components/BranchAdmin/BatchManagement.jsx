@@ -14,9 +14,9 @@ const BatchManagement = () => {
   const lists = [
     "S.no",
     "Batch Name",
-    "Total Faculties",
-    "Total Staff",
-    "Branch Admin",
+    "Course Name",
+    "Branch Name",
+    "Total Lectures",
     "Edit",
     "Delete",
   ];
@@ -78,15 +78,24 @@ const BatchManagement = () => {
                   <li className="font-semibold">{index + 1}</li>
                   <li>{branche.name}</li>
 
-                  <li>
-                    {branche?.branch?.users?.filter((u) => u.role === "FACULTY").length || 0}
+                  {/* <li>
+                    {branche?.branch?.users?.filter((u) => u.role === "FACULTY")
+                      .length || 0}
                   </li>
 
                   <li>
-                    {branche?.branch?.users?.filter((u) => u.role === "STAFF").length || 0}
-                  </li>
+                    {branche?.branch?.users?.filter((u) => u.role === "STAFF")
+                      .length || 0}
+                  </li> */}
+                  <li>{branche?.course?.name}</li>
+                  <li>{branche?.course?.branch?.name}</li>
 
-                  <li>{branchAdmin ? branchAdmin.name : "-"}</li>
+                  <li>
+                    {branche?.lectureSchedules?.reduce(
+                      (sum, lec) => sum + lec?.TotalScheduled,
+                      0
+                    ) || "-"}
+                  </li>
 
                   {/* <li>
                     <Button

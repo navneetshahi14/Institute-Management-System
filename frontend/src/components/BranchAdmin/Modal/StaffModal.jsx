@@ -26,6 +26,8 @@ const StaffModal = ({ open, setOpen }) => {
 
   const [actualinTime, setActualInTime] = useState(null);
   const [actualoutTime, setActualOutTime] = useState(null);
+  const [salary, setSalary] = useState(null);
+  const [workingMinutesPerDay, setWorkingMinutesPerDay] = useState(null);
 
   const formatTime = (isoTime) => {
     return new Date(isoTime).toLocaleTimeString("en-IN", {
@@ -72,6 +74,8 @@ const StaffModal = ({ open, setOpen }) => {
 
   useEffect(() => {
     const userdata = users.find((item) => item.id === staffId);
+    setSalary(userdata?.salary);
+    setWorkingMinutesPerDay(userdata?.workingMinutesPerDay)
 
     setStartTime(userdata?.shiftStartTime);
     setEndTime(userdata?.shiftEndTime);
@@ -79,56 +83,140 @@ const StaffModal = ({ open, setOpen }) => {
 
   const [staffPreview, setStaffPreview] = useState(null);
 
+  const getDaysInCurrentMonth = () => {
+    const now = new Date();
+    return new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate();
+  };
+
   const THIRTY_MIN = 30 * 60 * 1000;
 
-  const calculateStaffAttendanceUI = ({
-    shiftStart,
-    shiftEnd,
+  // const calculateStaffAttendanceUI = ({
+  //   shiftStart,
+  //   shiftEnd,
+  //   actualIn,
+  //   actualOut,
+  // }) => {
+  //   let isLate = false;
+  //   let overtimeMinutes = 0;
+  //   let overtimePay = 0;
+  //   let message = "On time";
+  //   let lateMinutes = 0;
+
+  //   if (actualIn > shiftStart) {
+  //     lateMinutes = Math.floor((actualIn - shiftStart) / (60 * 1000));
+
+  //     if (actualIn - shiftStart > THIRTY_MIN) {
+  //       isLate = true;
+  //       message = "Late Arrival";
+  //     }
+  //   }
+
+  //   if (actualOut && actualOut > shiftEnd) {
+  //     overtimeMinutes = Math.floor((actualOut - shiftEnd) / THIRTY_MIN) * 30;
+
+  //     overtimePay = (overtimeMinutes / 30) * 50;
+
+  //     if (overtimePay > 0) {
+  //       message = "Overtime Worked";
+  //     }
+  //   }
+
+  //   return {
+  //     isLate,
+  //     overtimeMinutes,
+  //     overtimePay,
+  //     message,
+  //     lateMinutes,
+  //   };
+  // };
+
+  function calculateStaffAttendanceUI({
+    monthlySalary,
+    workingDays,
+    workingMinutesPerDay,
+    scheduledIn,
+    scheduledOut,
     actualIn,
     actualOut,
-  }) => {
-    let isLate = false;
-    let overtimeMinutes = 0;
-    let overtimePay = 0;
-    let message = "On time";
-    let lateMinutes = 0;
+  }) {
+    const GRACE_MINUTES = 15;
+    const FIXED_PENALTY = 50;
 
-    if (actualIn > shiftStart) {
-      lateMinutes = Math.floor((actualIn - shiftStart) / (60 * 1000));
+    if (!actualOut || !monthlySalary || !workingMinutesPerDay || !scheduledIn)
+      return null;
 
-      if (actualIn - shiftStart > THIRTY_MIN) {
-        isLate = true;
-        message = "Late Arrival";
-      }
+    const totalMonthlyMinutes = workingDays * workingMinutesPerDay;
+    const perMinuteRate = monthlySalary / totalMonthlyMinutes;
+
+    // ---- BASIC CALCS ----
+    const actualWorkedMinutes = Math.floor(
+      (actualOut - actualIn) / (1000 * 60)
+    );
+
+    const requiredMinutes = workingMinutesPerDay;
+
+    // ---- LATE START ----
+    const lateMinutes = Math.max(
+      0,
+      Math.floor((actualIn - scheduledIn) / (1000 * 60))
+    );
+
+    const isLateBeyondGrace = lateMinutes > GRACE_MINUTES;
+
+    // ---- SHORTFALL ----
+    const shortfallMinutes = Math.max(0, requiredMinutes - actualWorkedMinutes);
+
+    // ---- OVERTIME ----
+    const extraMinutes = Math.max(0, actualWorkedMinutes - requiredMinutes);
+
+    const overtimeMinutes = Math.floor(extraMinutes);
+    const overtimePay =
+      overtimeMinutes >= 30 ? Math.floor(overtimeMinutes * perMinuteRate) : 0;
+
+    // ---- PENALTY ----
+    let fixedPenalty =
+      isLateBeyondGrace || shortfallMinutes > 15 ? FIXED_PENALTY : 0;
+    let additionalPenalty = 0;
+
+    if (shortfallMinutes >= GRACE_MINUTES) {
+      const penaltyMinutes = shortfallMinutes - GRACE_MINUTES;
+      additionalPenalty = penaltyMinutes * perMinuteRate;
     }
 
-    if (actualOut && actualOut > shiftEnd) {
-      overtimeMinutes = Math.floor((actualOut - shiftEnd) / THIRTY_MIN) * 30;
-
-      overtimePay = (overtimeMinutes / 30) * 50;
-
-      if (overtimePay > 0) {
-        message = "Overtime Worked";
-      }
-    }
+    const totalPenalty = fixedPenalty + additionalPenalty;
 
     return {
-      isLate,
+      requiredMinutes,
+      actualWorkedMinutes,
+      lateEntry: isLateBeyondGrace,
+
+      lateMinutes,
+      shortfallMinutes,
+
+      fixedPenalty,
+      additionalPenalty: Number(additionalPenalty.toFixed(2)),
+      totalPenalty: Number(totalPenalty.toFixed(2)),
+
       overtimeMinutes,
       overtimePay,
-      message,
-      lateMinutes,
+
+      perMinuteRate: Number(perMinuteRate.toFixed(2)),
     };
-  };
+  }
 
   useEffect(() => {
     if (!startTime || !endTime || !actualinTime || !actualoutTime) return;
     const start = startTime.split("T")[0];
     const end = endTime.split("T")[0];
 
+    const workingDays = getDaysInCurrentMonth();
+
     const result = calculateStaffAttendanceUI({
-      shiftStart: new Date(startTime),
-      shiftEnd: new Date(endTime),
+      monthlySalary: salary,
+      workingDays: workingDays,
+      workingMinutesPerDay: workingMinutesPerDay,
+      scheduledIn: new Date(startTime),
+      scheduledOut: new Date(endTime),
       actualIn: new Date(`${start}T${actualinTime}`),
       actualOut: actualoutTime ? new Date(`${end}T${actualoutTime}`) : null,
     });
@@ -249,19 +337,19 @@ const StaffModal = ({ open, setOpen }) => {
                 <Label>Late Entry</Label>
                 <Input
                   type={`text`}
+                  value={`${staffPreview?.lateEntry}`}
                   placeholder={`Yes/No`}
-                  value={(staffPreview?.isLate ? "Yes" : "No") || "No"}
                   readOnly
                 />
               </div>
 
               <div>
-                <Label>Late Duration(mins)</Label>
+                <Label>Late Penalty</Label>
                 <Input
                   type={`text`}
                   placeholder={`40mins`}
                   readOnly
-                  value={staffPreview?.lateMinutes || 0}
+                  value={Math.floor(staffPreview?.totalPenalty) || 0}
                 />
               </div>
 
@@ -271,7 +359,11 @@ const StaffModal = ({ open, setOpen }) => {
                   type={`text`}
                   placeholder={`70mins`}
                   readOnly
-                  value={staffPreview?.overtimeMinutes || 0}
+                  value={
+                    staffPreview?.overtimeMinutes >= 30
+                      ? staffPreview?.overtimeMinutes
+                      : 0 || 0
+                  }
                 />
               </div>
 

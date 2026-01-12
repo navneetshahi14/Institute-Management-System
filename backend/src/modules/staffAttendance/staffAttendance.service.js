@@ -105,7 +105,7 @@ function calculateStaffAttendance({
   );
 
   const isLate = lateMinutes > GRACE_MINUTES;
-  const fixedPenalty = isLate ? FIXED_PENALTY : 0;
+  const fixedPenalty = (isLate || shortfallMinutes) ? FIXED_PENALTY : 0;
 
   // -------- SHORTFALL --------
   const shortfallMinutes = Math.max(0, requiredMinutes - actualWorkedMinutes);
@@ -120,8 +120,8 @@ function calculateStaffAttendance({
   // -------- OVERTIME --------
   const extraMinutes = Math.max(0, actualWorkedMinutes - requiredMinutes);
 
-  const overtimeMinutes = Math.floor(extraMinutes / 30) * 30;
-  const overtimePay = (overtimeMinutes / 30) * 50;
+  const overtimeMinutes = Math.floor(extraMinutes);
+  const overtimePay = overtimeMinutes >= 30 ? Math.floor((overtimeMinutes) * perMinuteRate) : 0;
 
   return {
     lateMinutes,
@@ -162,9 +162,10 @@ const markStaffAttendance = async ({
     shiftEndTime,
     actualInTime,
     actualOutTime,
-    monthlySalary: staff.monthlySalary,
+    monthlySalary: staff.salary,
     workingMinutesPerDay: staff.workingMinutesPerDay,
   });
+
 
   return await prisma.staffAttendance.create({
     data: {
@@ -179,6 +180,7 @@ const markStaffAttendance = async ({
       isLate: calc.isLate,
       lateMinutes: calc.lateMinutes,
       extraPenalty: calc.extraPenalty,
+      totalPenalty: calc.totalPenalty,
 
       overtimeMinutes: calc.overtimeMinutes,
       overtimePay: calc.overtimePay,
@@ -216,25 +218,29 @@ const getStaffMonthlySalarySummary = async (staffId, month, year) => {
   const attendance = await prisma.staffAttendance.findMany({
     where: {
       staffId,
-      data: {
+      date: {
         gte: start,
         lte: end,
       },
     },
   });
 
+  console.log(attendance)
+
   let fixedLatePenalties = 0;
   let totalExtaPenalties = 0;
   let totalOvertimePay = 0;
   let lateDaysCount = 0;
+  let totalPenalties = 0;
 
   attendance.forEach((a) => {
     if (a.isLate) {
       lateDaysCount += 1;
-      fixedLatePenalties += a.fixedPenalty;
+      fixedLatePenalties += 50;
     }
 
     totalExtaPenalties += a.extraPenalty || 0;
+    totalPenalties += a.totalPenalty || 0;
     totalOvertimePay += a.overtimePay || 0;
   });
 

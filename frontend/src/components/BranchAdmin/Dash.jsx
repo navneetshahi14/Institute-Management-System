@@ -8,7 +8,8 @@ const Dash = () => {
   const [staff, setStaff] = useState([]);
   const [branch, setBranch] = useState({});
   const [lecture, setLecture] = useState([]);
-  const [branchData,setBranchData] = useState({})
+  const [branchData, setBranchData] = useState({});
+  const [batches, setBatches] = useState([]);
 
   useEffect(() => {
     let tokn = JSON.parse(localStorage.getItem("user"));
@@ -16,34 +17,44 @@ const Dash = () => {
     setBranch(tokn.data.user.branch);
 
     const loadData = async () => {
-      const { data } = await axios.get(
-        `${mainRoute}/api/users/dashboad`,
-        {
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${token}`,
-          },
-        }
-      );
+      const { data } = await axios.get(`${mainRoute}/api/users/dashboad`, {
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+      });
       console.log(data.data);
       const facultyData = data.data.faculty
         .filter((user) => user.role === "FACULTY")
         .filter((user) => user.branchId === tokn.data.user.branch.id);
+      console.log(facultyData);
       const staffData = data.data.faculty
         .filter((user) => user.role === "STAFF")
         .filter((user) => user.branchId === tokn.data.user.branch.id);
       //   const branchData = data.data.branch;
 
-      const lectur = data.data.lectures.filter(
-        (lec) => lec.batch.branchId === tokn.data.user.branch.id
-      );
-      const bran = data.data.branch.find((branc)=>branc.id === tokn.data.user.branch.id)
+      console.log(staffData);
 
-      console.log(bran)
-      setBranchData(bran)
+      const lectur = data.data.lectures.filter(
+        (lec) => lec.batch.course.branchId === tokn.data.user.branch.id
+      );
+
+      console.log(data.data.lectures);
+      const bran = data.data.branch.find(
+        (branc) => branc.id === tokn.data.user.branch.id
+      );
+      console.log(bran);
+
+      const bat = data.data.batch.filter(
+        (b) => b.course.branchId === tokn.data.user.branch.id
+      );
+
+      console.log(bran);
+      setBranchData(bran);
       setFaculty(facultyData);
       setStaff(staffData);
       setLecture(lectur);
+      setBatches(bat)
     };
 
     loadData();
@@ -75,7 +86,10 @@ const Dash = () => {
           <div className="rounded bg-gray-200 shadow-lg border flex flex-col justify-center items-center min-h-35">
             <h1 className="text-xl font-semibold uppercase">Total Lectures</h1>
             <p className="text-lg text-gray-600">
-              {lecture?.reduce((sum, lec) => sum + (lec.TotalScheduled || 0), 0)}
+              {lecture?.reduce(
+                (sum, lec) => sum + (lec.TotalScheduled || 0),
+                0
+              )}
             </p>
           </div>
 
@@ -134,7 +148,7 @@ const Dash = () => {
           <div className="rounded bg-gray-200 shadow-lg border flex flex-col justify-center items-center min-h-35">
             <h1 className="text-xl font-semibold uppercase">Total Batches</h1>
             <p className="text-lg text-gray-600">
-              {branchData.batches?.length || 0}
+              {batches?.length || 0}
             </p>
           </div>
         </div>

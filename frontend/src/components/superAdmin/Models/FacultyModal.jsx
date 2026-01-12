@@ -21,6 +21,10 @@ const FacultyModal = ({ open, setOpen }) => {
   const [bra, setBra] = useState([]);
   const [users, setUsers] = useState([]);
   const [lec, setLec] = useState([]);
+  const [courses, setCourses] = useState([]);
+  const [facultyType, setFacultyType] = useState([]);
+
+  const [course, setCourse] = useState(null);
 
   const [us, setUs] = useState({});
 
@@ -35,7 +39,7 @@ const FacultyModal = ({ open, setOpen }) => {
   const [filteredSubject, setFilteredSubject] = useState([]);
   const [filteredLecture, setFilteredLecture] = useState([]);
 
-  const [selectFaculty, setSelectFaulty] = useState(null);
+  const [selectFaculty, setSelectFaulty] = useState({});
 
   const [startTime, setStartTime] = useState(null);
   const [endTime, setEndTime] = useState(null);
@@ -43,7 +47,7 @@ const FacultyModal = ({ open, setOpen }) => {
   const [inTime, setIntime] = useState(null);
   const [outTime, setOuttime] = useState(null);
 
-  const { fetchBranch, fetchUser, fetchSubject, fetchLecture } =
+  const { fetchBranch, fetchUser, fetchSubject, fetchLecture, fetchCourse } =
     useManagement();
 
   const formatTime = (isoTime) => {
@@ -65,6 +69,20 @@ const FacultyModal = ({ open, setOpen }) => {
   }, []);
 
   useEffect(() => {
+    const loadData = async () => {
+      const courseData = await fetchCourse();
+
+      const filterCourse = courseData.filter(
+        (course) => course.branchId === selectedBranch
+      );
+      console.log(filterCourse);
+
+      setCourses(filterCourse);
+    };
+    loadData();
+  }, [selectedBranch]);
+
+  useEffect(() => {
     let tok = JSON.parse(localStorage.getItem("user"));
     let token = tok.data.token;
     const fetchBatch = async () => {
@@ -76,25 +94,24 @@ const FacultyModal = ({ open, setOpen }) => {
       });
 
       const filtereddata = data.data.filter(
-        (batch) => batch.branchId === selectedBranch
+        (batch) => batch.courseId === course
       );
       // console.log(filtereddata);
       setBatch(filtereddata);
     };
 
     fetchBatch();
-  }, [selectedBranch]);
+  }, [course]);
 
   useEffect(() => {
     const loadData = async () => {
       const userData = await fetchUser();
       const facultyOnly = userData.filter((user) => user.role === "FACULTY");
-      console.log(facultyOnly);
       setUsers(facultyOnly);
       setFilteredFaculty(facultyOnly);
     };
     loadData();
-  }, [selectedBatch]);
+  }, [selectedBranch]);
 
   useEffect(() => {
     if (!selectedBranch) {
@@ -114,10 +131,11 @@ const FacultyModal = ({ open, setOpen }) => {
       setFilteredLecture(lec);
       return;
     }
-
     const lectureWiseFilter = lec.filter(
-      (user) => user.faculty.id === Number(selectFaculty)
+      (user) => user.faculty.id === Number(selectFaculty.id)
     );
+
+    setFacultyType(selectFaculty.facultyType);
 
     setFilteredLecture(lectureWiseFilter);
   }, [selectFaculty, lec]);
@@ -127,7 +145,7 @@ const FacultyModal = ({ open, setOpen }) => {
       const subjectData = await fetchLecture();
       const filterSub = subjectData
         .filter((sub) => sub.batchId === selectedBatch)
-        .filter((sub) => sub.facultyId === selectFaculty);
+        .filter((sub) => sub.facultyId === selectFaculty.id);
       setLec(filterSub);
     };
     load();
@@ -136,13 +154,13 @@ const FacultyModal = ({ open, setOpen }) => {
   const settingpayout = async () => {
     const userdata = await fetchUser();
 
-    const filterdata = userdata.find((user) => user.id === selectFaculty);
+    const filterdata = userdata.find((user) => user.id === selectFaculty.id);
 
     if (status === "CONDUCTED") {
-      setPayout(filterdata.salary);
+      setPayout(filterdata.lectureRate);
     }
     if (status === "CANCELLED") {
-      setPayout(filterdata.salary / 2);
+      setPayout(filterdata.lectureRate / 2);
     }
     if (status === "MISSED") {
       setPayout(0);
@@ -150,7 +168,7 @@ const FacultyModal = ({ open, setOpen }) => {
   };
 
   useEffect(() => {
-    settingpayout();
+    // settingpayout();
   }, [status]);
 
   useEffect(() => {
@@ -167,75 +185,143 @@ const FacultyModal = ({ open, setOpen }) => {
 
   const FIFTEEN_MIN = 15 * 60 * 1000;
 
-  const calculateFacultyPenaltyUI = ({
+  // const calculateFacultyPenaltyUI = ({
+  //   plannedStart,
+  //   plannedEnd,
+  //   actualStart,
+  //   actualEnd,
+  //   // isCancelledNoStudents,
+  //   lectureAmount,
+  // }) => {
+  //   // if (isCancelledNoStudents) {
+  //   //   return {
+  //   //     penalty: "NONE",
+  //   //     payableAmount: lectureAmount / 2,
+  //   //     message: "Lecture cancelled (No Students) – 50% Pay",
+  //   //   };
+  //   // }
+
+  //   let isLate = false;
+  //   let isEarly = false;
+
+  //   if (actualStart - plannedStart > FIFTEEN_MIN) {
+  //     isLate = true;
+  //   }
+
+  //   if (plannedEnd - actualEnd > FIFTEEN_MIN) {
+  //     isEarly = true;
+  //   }
+
+  //   let penalty = "NONE";
+
+  //   if (isLate && isEarly) penalty = "BOTH";
+  //   else if (isLate) penalty = "LATE_START";
+  //   else if (isEarly) penalty = "EARLY_END";
+
+  //   return {
+  //     penalty,
+  //     payableAmount: lectureAmount,
+  //     message:
+  //       penalty === "NONE"
+  //         ? "No Penalty"
+  //         : penalty === "LATE_START"
+  //         ? "Late Start Penalty"
+  //         : penalty === "EARLY_END"
+  //         ? "Early End Penalty"
+  //         : "Late Start + Early End Penalty",
+  //   };
+  // };
+
+  const LECTURE_MINUTES = 120;
+
+  function calculateLectureBasedFaculty({
     plannedStart,
     plannedEnd,
     actualStart,
     actualEnd,
-    // isCancelledNoStudents,
-    lectureAmount,
-  }) => {
-    // if (isCancelledNoStudents) {
-    //   return {
-    //     penalty: "NONE",
-    //     payableAmount: lectureAmount / 2,
-    //     message: "Lecture cancelled (No Students) – 50% Pay",
-    //   };
-    // }
+    lectureRate,
+  }) {
+    const FIFTEEN_MIN = 15 * 60 * 1000;
 
-    let isLate = false;
-    let isEarly = false;
-
-    if (actualStart - plannedStart > FIFTEEN_MIN) {
-      isLate = true;
-    }
-
-    if (plannedEnd - actualEnd > FIFTEEN_MIN) {
-      isEarly = true;
-    }
+    let isLate = actualStart - plannedStart > FIFTEEN_MIN;
+    let isEarly = plannedEnd - actualEnd > FIFTEEN_MIN;
 
     let penalty = "NONE";
-
     if (isLate && isEarly) penalty = "BOTH";
     else if (isLate) penalty = "LATE_START";
     else if (isEarly) penalty = "EARLY_END";
 
+    const workedMinutes = Math.max(
+      0,
+      Math.floor((actualEnd - actualStart) / (1000 * 60))
+    );
+
+    const lectureEquivalent = workedMinutes / LECTURE_MINUTES;
+    console.log(lectureEquivalent);
+
+    const calculatedPayout =
+      lectureEquivalent > 1
+        ? Number((lectureEquivalent * lectureRate).toFixed(2))
+        : lectureRate;
+
     return {
       penalty,
-      payableAmount: lectureAmount,
+      workedMinutes,
+      lectureEquivalent: Number(lectureEquivalent.toFixed(2)),
+      calculatedPayout,
       message:
         penalty === "NONE"
-          ? "No Penalty"
+          ? "On Time"
           : penalty === "LATE_START"
-          ? "Late Start Penalty"
+          ? "Late Start"
           : penalty === "EARLY_END"
-          ? "Early End Penalty"
-          : "Late Start + Early End Penalty",
+          ? "Early End"
+          : "Late + Early",
     };
-  };
+  }
 
   const [cancelled, setCancelled] = useState(false);
 
   const [penaltyPreview, setPenaltyPreview] = useState(null);
 
-  const lectureAmount = 500;
+  function applyStatusOnPayout(calculatedPayout, status) {
+    if (status === "MISSED") return 0;
+    if (status === "CANCELLED") return calculatedPayout / 2;
+    return calculatedPayout; // CONDUCTED
+  }
 
   useEffect(() => {
-    if (!lecture.startTime || !lecture.endTime || !inTime || !outTime) return;
-    const start = lecture.startTime.split("T")[0];
-    const end = lecture.endTime.split("T")[0];
+    if (
+      !lecture.startTime ||
+      !lecture.endTime ||
+      !inTime ||
+      !outTime ||
+      !status
+    )
+      return;
 
-    const result = calculateFacultyPenaltyUI({
+    const date = lecture.startTime.split("T")[0];
+
+    const result = calculateLectureBasedFaculty({
       plannedStart: new Date(lecture.startTime),
       plannedEnd: new Date(lecture.endTime),
-      actualStart: new Date(`${start}T${inTime}`),
-      actualEnd: new Date(`${end}T${outTime}`),
-      // isCancelledNoStudents: cancelled,
-      lectureAmount,
+      actualStart: new Date(`${date}T${inTime}`),
+      actualEnd: new Date(`${date}T${outTime}`),
+      lectureRate: selectFaculty.lectureRate,
     });
 
+    const finalPayout = applyStatusOnPayout(result.calculatedPayout, status);
+
     setPenaltyPreview(result);
-  }, [startTime, endTime, inTime, outTime, cancelled]);
+    setPayout(finalPayout);
+  }, [lecture, inTime, outTime, status]);
+
+  useEffect(() => {
+    if (facultyType === "SALARY_BASED") {
+      setStartTime(formatTime(selectFaculty.shiftStartTime));
+      setEndTime(formatTime(selectFaculty.shiftEndTime));
+    }
+  }, [facultyType]);
 
   const markAttendance = async () => {
     try {
@@ -261,6 +347,38 @@ const FacultyModal = ({ open, setOpen }) => {
           },
         }
       );
+      toast.success("Attendance Marked Successfully");
+      setOpen(false);
+      router.refresh();
+    } catch (err) {
+      toast.error("Error in marking attendance");
+      setOpen(false);
+      router.refresh();
+    }
+  };
+
+  const markSalaryBasedAttendance = async () => {
+    try {
+      let tok = JSON.parse(localStorage.getItem("user")).data.token;
+      let today = new Date();
+
+      const { data } = axios.post(
+        `${mainRoute}/api/attendance/faculty/attendance/mark`,
+        {
+          facultyId: selectFaculty.id,
+          date: today,
+          inTime: inTime,
+          outTime: outTime,
+          isLeave: status,
+        },
+        {
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${tok}`,
+          },
+        }
+      );
+
       toast.success("Attendance Marked Successfully");
       setOpen(false);
       router.refresh();
@@ -305,22 +423,6 @@ const FacultyModal = ({ open, setOpen }) => {
                 </Select>
               </div>
 
-              <div>
-                <Label>Batch</Label>
-                <Select onValueChange={(v) => setSelectedBatch(v)}>
-                  <SelectTrigger className={`w-full`}>
-                    <SelectValue placeholder={`Batch Name`} />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {batch.map((item, i) => (
-                      <SelectItem key={i} value={item.id}>
-                        {item.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-
               <div className="">
                 <Label>Faculty Name</Label>
                 <Select onValueChange={(v) => setSelectFaulty(v)}>
@@ -333,8 +435,8 @@ const FacultyModal = ({ open, setOpen }) => {
                         No faculty found for this branch
                       </div>
                     ) : (
-                      filteredFaculty.map((item) => (
-                        <SelectItem key={item.id} value={item.id}>
+                      filteredFaculty.map((item, i) => (
+                        <SelectItem key={i} value={item}>
                           {item.name}
                         </SelectItem>
                       ))
@@ -343,27 +445,62 @@ const FacultyModal = ({ open, setOpen }) => {
                 </Select>
               </div>
 
-              <div>
-                <Label>Subject</Label>
-                <Select onValueChange={(v) => setLecture(v)}>
-                  <SelectTrigger className={`w-full`}>
-                    <SelectValue placeholder={`Subject Name`} />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {filteredLecture.length === 0 ? (
-                      <div className="p-2 text-sm text-gray-500">
-                        No faculty found for this branch
-                      </div>
-                    ) : (
-                      filteredLecture.map((item, i) => (
-                        <SelectItem key={i} value={item}>
-                          {item.subject.name}
-                        </SelectItem>
-                      ))
-                    )}
-                  </SelectContent>
-                </Select>
-              </div>
+              {facultyType === "LECTURE_BASED" && (
+                <>
+                  <div>
+                    <Label>Course</Label>
+                    <Select onValueChange={(v) => setCourse(v)}>
+                      <SelectTrigger className={`w-full`}>
+                        <SelectValue placeholder={`Course`} />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {courses.map((item, i) => (
+                          <SelectItem key={i} value={item.id}>
+                            {item.name}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  <div>
+                    <Label>Batch</Label>
+                    <Select onValueChange={(v) => setSelectedBatch(v)}>
+                      <SelectTrigger className={`w-full`}>
+                        <SelectValue placeholder={`Batch Name`} />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {batch.map((item, i) => (
+                          <SelectItem key={i} value={item.id}>
+                            {item.name}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div>
+                    <Label>Subject</Label>
+                    <Select onValueChange={(v) => setLecture(v)}>
+                      <SelectTrigger className={`w-full`}>
+                        <SelectValue placeholder={`Subject Name`} />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {filteredLecture.length === 0 ? (
+                          <div className="p-2 text-sm text-gray-500">
+                            No faculty found for this branch
+                          </div>
+                        ) : (
+                          filteredLecture.map((item, i) => (
+                            <SelectItem key={i} value={item}>
+                              {item.subject.name}
+                            </SelectItem>
+                          ))
+                        )}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </>
+              )}
 
               <div>
                 <Label>Status</Label>
@@ -371,61 +508,73 @@ const FacultyModal = ({ open, setOpen }) => {
                   <SelectTrigger className={`w-full`}>
                     <SelectValue placeholder={`Status`} />
                   </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value={`CONDUCTED`}>Conducted</SelectItem>
-                    <SelectItem value={`CANCELLED`}>Cancelled</SelectItem>
-                    <SelectItem value={`MISSED`}>Missed</SelectItem>
-                  </SelectContent>
+                  {facultyType === "LECTURE_BASED" ? (
+                    <SelectContent>
+                      <SelectItem value={`CONDUCTED`}>Conducted</SelectItem>
+                      <SelectItem value={`CANCELLED`}>Cancelled</SelectItem>
+                      <SelectItem value={`MISSED`}>Missed</SelectItem>
+                    </SelectContent>
+                  ) : (
+                    <SelectContent>
+                      <SelectItem value={false}>Present</SelectItem>
+                      <SelectItem value={true}>On Leave</SelectItem>
+                    </SelectContent>
+                  )}
                 </Select>
               </div>
 
-              <div>
-                <Label>Payout</Label>
-                <Input
-                  value={payout}
-                  readOnly
-                  placeholder={`Payout`}
-                  onChange={(e) => setPayout(e.target.value)}
-                />
-              </div>
+              {(status === "CONDUCTED" || facultyType === "SALARY_BASED") && (
+                <>
+                  <div>
+                    <Label>Planned Time</Label>
+                    <Input
+                      type={`text`}
+                      readOnly
+                      className={`uppercase`}
+                      value={`${startTime || "00:00"} - ${endTime || "00:00"}`}
+                    />
+                  </div>
+                  <div>
+                    <div>
+                      <Label>In Time</Label>
+                      <Input
+                        type={`time`}
+                        onChange={(e) => setIntime(e.target.value)}
+                      />
+                    </div>
+                    <div>
+                      <Label>Out Time</Label>
+                      <Input
+                        type={`time`}
+                        onChange={(e) => setOuttime(e.target.value)}
+                      />
+                    </div>
+                  </div>
+                </>
+              )}
+              {facultyType === "LECTURE_BASED" && (
+                <>
+                  <div>
+                    <Label>Payout</Label>
+                    <Input
+                      value={payout}
+                      readOnly
+                      placeholder={`Payout`}
+                      onChange={(e) => setPayout(e.target.value)}
+                    />
+                  </div>
 
-              <div>
-                <Label>Planned Time</Label>
-                {/* <input type="time" value="10:30" readOnly />  */}
-                <Input
-                  type={`text`}
-                  readOnly
-                  className={`uppercase`}
-                  value={`${startTime || "00:00"} - ${endTime || "00:00"}`}
-                />
-              </div>
-
-              <div>
-                <div>
-                  <Label>In Time</Label>
-                  <Input
-                    type={`time`}
-                    onChange={(e) => setIntime(e.target.value)}
-                  />
-                </div>
-                <div>
-                  <Label>Out Time</Label>
-                  <Input
-                    type={`time`}
-                    onChange={(e) => setOuttime(e.target.value)}
-                  />
-                </div>
-              </div>
-
-              <div>
-                <Label>Penalty</Label>
-                <Input
-                  type={`text`}
-                  placeholder={`Penalty`}
-                  value={penaltyPreview?.message || "0"}
-                  readOnly
-                />
-              </div>
+                  <div>
+                    <Label>Penalty</Label>
+                    <Input
+                      type={`text`}
+                      placeholder={`Penalty`}
+                      value={penaltyPreview?.message || "0"}
+                      readOnly
+                    />
+                  </div>
+                </>
+              )}
 
               <div className="flex-row! w-full [&>Button]:cursor-pointer">
                 <Button
@@ -436,7 +585,14 @@ const FacultyModal = ({ open, setOpen }) => {
                 >
                   Cancel
                 </Button>
-                <Button onClick={markAttendance} className={`w-1/2`}>
+                <Button
+                  onClick={
+                    facultyType === "LECTURE_BASED"
+                      ? markAttendance
+                      : markSalaryBasedAttendance
+                  }
+                  className={`w-1/2`}
+                >
                   Save
                 </Button>
               </div>

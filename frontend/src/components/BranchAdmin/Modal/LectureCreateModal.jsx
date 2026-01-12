@@ -16,7 +16,7 @@ import { useRouter } from "next/navigation";
 import React, { useEffect, useState } from "react";
 import { toast } from "sonner";
 
-const LectureCreateModal = ({ open, setOpen, lec, type ,refetch }) => {
+const LectureCreateModal = ({ open, setOpen, lec, type, refetch }) => {
   const router = useRouter();
   const { fetchSubject, fetchUser } = useManagement();
   const [batch, setbatch] = useState([]);
@@ -24,7 +24,11 @@ const LectureCreateModal = ({ open, setOpen, lec, type ,refetch }) => {
   const isoTo24Hour = (isoString) => {
     if (!isoString) return "";
     const date = new Date(isoString);
-    return date.toISOString().slice(11, 16); // HH:mm
+    return date.toLocaleTimeString("en-IN", {
+      hour: "2-digit",
+      minute: "2-digit",
+      hour12: false,
+    });
   };
 
   const [branch, setBranch] = useState({});
@@ -94,10 +98,11 @@ const LectureCreateModal = ({ open, setOpen, lec, type ,refetch }) => {
         },
       });
 
+      console.log(data.data);
+
       const filtereddata = data.data.filter(
-        (batch) => batch.branchId === tok.data.user.branchId
+        (batch) => batch.course.branchId === tok.data.user.branchId
       );
-      console.log(filtereddata);
       setbatch(filtereddata);
     };
 
@@ -118,7 +123,7 @@ const LectureCreateModal = ({ open, setOpen, lec, type ,refetch }) => {
         .filter((user) => user.branchId === branchdata.data.user.branch.id);
 
       const filtersubject = subject.filter(
-        (sub) => sub.batch.branchId === branchdata.data.user.branch.id
+        (sub) => sub.batch.course.branchId === branchdata.data.user.branch.id
       );
 
       console.log(filteruserdata);

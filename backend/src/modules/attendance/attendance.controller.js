@@ -33,7 +33,7 @@ const markAttendance = async (req, res) => {
 const facultyMonthlySummaryController = async (req, res) => {
   try {
     const { facultyId } = req.params;
-    const { month, year } = req.body;
+    const { month, year } = req.query;
 
     const summary = await getFacultyMonthlySummary(
       Number(facultyId),

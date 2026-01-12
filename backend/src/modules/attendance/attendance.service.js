@@ -105,7 +105,7 @@ const getFacultyMonthlySummary = async (facultyId, month, year) => {
       lecture: {
         facultyId,
       },
-      data: {
+      date: {
         gte: start,
         lte: end,
       },
@@ -170,6 +170,52 @@ const getFacultyMonthlySummary = async (facultyId, month, year) => {
   };
 };
 
+async function getLecturesForFacultyOnDate(facultyId, date) {
+  return await prisma.lectureSchedule.findMany({
+    where: {
+      facultyId,
+      StartDate: { lte: date },
+      EndDate: { gte: date },
+    },
+  });
+}
+
+async function autoMarkLectureAttendanceForSalaryFaculty({
+  facultyId,
+  attendanceDate,
+}) {
+  const lectures = await getLecturesForFacultyOnDate(
+    facultyId,
+    attendanceDate
+  );
+
+  for (const lecture of lectures) {
+    await prisma.lectureAttendance.upsert({
+      where: {
+        lectureId_date: {
+          lectureId: lecture.id,
+          date: attendanceDate,
+        },
+      },
+      update: {
+        status: "CONDUCTED",
+        payout: 0,
+        penalty: "NONE",
+      },
+      create: {
+        lectureId: lecture.id,
+        date: attendanceDate,
+        actualStartTime: lecture.startTime,
+        actualEndTime: lecture.endTime,
+        status: "CONDUCTED",
+        payout: 0,
+        penalty: "NONE",
+      },
+    });
+  }
+}
+
+
 // Salary Based Faculty Attendance and Salary Summary
 const markSalaryBasedFacultyAttendance = async ({
   facultyId,
@@ -195,6 +241,9 @@ const markSalaryBasedFacultyAttendance = async ({
   const attendanceDate = new Date(date);
   attendanceDate.setHours(0, 0, 0, 0);
 
+  let aOutTime = null;
+  let aInTime = null;
+
   let workingMintues = 0;
 
   if (!isLeave) {
@@ -202,14 +251,28 @@ const markSalaryBasedFacultyAttendance = async ({
       throw new Error("In-time and Out-time are required if not on leave");
     }
 
-    workingMintues = (new Date(outTime) - new Date(inTime)) / (1000 * 60);
+    aInTime = new Date(attendanceDate);
+    const [inH, inM] = inTime.split(":").map(Number);
+    aInTime.setHours(inH, inM, 0, 0);
+
+    aOutTime = new Date(attendanceDate);
+    const [outH, outM] = outTime.split(":").map(Number);
+    aOutTime.setHours(outH, outM, 0, 0);
+
+    if (aOutTime <= aInTime) {
+      throw new Error("Out-time must be after In-time");
+    }
+
+    workingMintues = Math.floor((aOutTime - aInTime) / (1000 * 60));
 
     if (workingMintues < 0) {
       throw new Error("Out-time must be after In-time");
     }
   }
 
-  return await prisma.facultyAttendance.upsert({
+
+
+  const attendance =  await prisma.facultyAttendance.upsert({
     where: {
       facultyId_date: {
         facultyId,
@@ -217,20 +280,30 @@ const markSalaryBasedFacultyAttendance = async ({
       },
     },
     update: {
-      inTime,
-      outTime,
+      inTime:aInTime,
+      outTime:aOutTime,
       isLeave,
-      workingMintues,
+      // workingMintues,
+      workingMinutes:workingMintues
     },
     create: {
       facultyId,
       date: attendanceDate,
-      inTime: isLeave ? null : inTime,
-      outTime: isLeave ? null : outTime,
+      inTime: isLeave ? null : aInTime,
+      outTime: isLeave ? null : aOutTime,
       isLeave,
-      workingMintues,
+      workingMinutes:workingMintues,
     },
   });
+
+  if (!isLeave) {
+    await autoMarkLectureAttendanceForSalaryFaculty({
+      facultyId,
+      attendanceDate,
+    });
+  }
+
+  return attendance;
 };
 
 const getSalaryBasedFacultyMonthlySummary = async (facultyId, month, year) => {
@@ -276,15 +349,15 @@ const getSalaryBasedFacultyMonthlySummary = async (facultyId, month, year) => {
   const perDaySalary = faculty.salary / totalDaysInMonth;
   const leaveDeduction = leaveDays * perDaySalary;
 
-  const netSalary = faculty.salary - leaveDeduction
+  const netSalary = faculty.salary - leaveDeduction;
 
   return {
     facultyId,
-    facultyType:"SALARY_BASED",
+    facultyType: "SALARY_BASED",
     month,
     year,
     monthlySalary: faculty.salary,
-    perDaySalary:Math.round(perDaySalary),
+    perDaySalary: Math.round(perDaySalary),
 
     totalDays: totalDaysInMonth,
     workingDays,
@@ -293,18 +366,17 @@ const getSalaryBasedFacultyMonthlySummary = async (facultyId, month, year) => {
     leaveDeduction: Math.round(leaveDeduction),
     netSalary: Math.max(0, Math.round(netSalary)),
 
-
-    attendanceSummary:{
+    attendanceSummary: {
       totalWorkingMinutes,
       averageDailyMinutes:
-        workingDays > 0 ? Math.round(totalWorkingMinutes/workingDays): 0,
-    }
-  }
+        workingDays > 0 ? Math.round(totalWorkingMinutes / workingDays) : 0,
+    },
+  };
 };
 
 module.exports = {
   markLectureAttendance,
   getFacultyMonthlySummary,
   markSalaryBasedFacultyAttendance,
-  getSalaryBasedFacultyMonthlySummary
+  getSalaryBasedFacultyMonthlySummary,
 };

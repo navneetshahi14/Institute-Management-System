@@ -233,8 +233,10 @@ const UserModal = ({ open, setOpen, type, user, refetch }) => {
                 <div className="">
                   <Label>Phone Number:</Label>
                   <Input
+                    maxLength={10}
                     onChange={(e) => setEmail(e.target.value)}
-                    type={`number`}
+                    type={`text`}
+                    inputMode={`numeric`}
                     placeholder={`Phone Number`}
                   />
                 </div>

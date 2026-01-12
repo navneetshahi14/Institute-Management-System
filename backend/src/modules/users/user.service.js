@@ -77,11 +77,18 @@ const getAllUser = async () => {
           subject: true,
         },
       },
+
       shiftStartTime: true,
       shiftEndTime: true,
       lectures: {
         include: {
           attendance: true,
+          subject:true,
+          batch:{
+            include:{
+              course:true
+            }
+          }
         },
       },
       staffAttendances: true,
@@ -93,31 +100,41 @@ const getAllUser = async () => {
   });
 };
 
-const makeBrancheAdmin = async (currentUserId, userId, branchId) => {
-  if (currentUserId) {
-    const currentUser = await prisma.user.findUnique({
-      where: { id: currentUserId },
+const makeBrancheAdmin = async (userId, branchId) => {
+  // 1️⃣ Branch fetch karo
+  const branch = await prisma.branch.findUnique({
+    where: { id: branchId },
+  });
+
+  console.log(branch)
+  if (!branch) {
+    throw new Error("Branch not found");
+  }
+
+  // 2️⃣ Agar branch pe pehle se admin hai → usko revert karo
+  if (branch.userId) {
+    const oldAdmin = await prisma.user.findUnique({
+      where: { id: branch.userId },
       select: {
         previousRole: true,
       },
     });
 
-    const previousRole = currentUser.previousRole || "STAFF";
+    const restoreRole = oldAdmin?.previousRole || "STAFF";
+
     await prisma.user.update({
-      where: { id: currentUserId },
+      where: { id: branch.userId }, // ✅ FIXED
       data: {
-        role: previousRole,
+        role: restoreRole,
         previousRole: null,
       },
     });
   }
-  const user = await prisma.user.findUnique({
-    where: {
-      id: userId,
-    },
-  });
 
-  const preRole = user.role;
+  // 3️⃣ New user fetch
+  const user = await prisma.user.findUnique({
+    where: { id: userId },
+  });
 
   if (!user) {
     throw new Error("User not found");
@@ -127,14 +144,25 @@ const makeBrancheAdmin = async (currentUserId, userId, branchId) => {
     throw new Error("Cannot change super admin role");
   }
 
-  return await prisma.user.update({
+  // 4️⃣ New admin bana do
+  const updatedUser = await prisma.user.update({
     where: { id: userId },
     data: {
       role: "BRANCH_ADMIN",
+      previousRole: user.role,
       branchId,
-      previousRole: preRole,
     },
   });
+
+  // 5️⃣ Branch ko naye admin se link karo
+  await prisma.branch.update({
+    where: { id: branchId },
+    data: {
+      userId: userId,
+    },
+  });
+
+  return updatedUser;
 };
 
 const updateUser = async (
@@ -245,15 +273,28 @@ const branchDashoard = async () => {
     include: {
       faculty: true,
       subject: true,
-      batch: true,
+      batch: {
+        include:{
+          course:true
+        }
+      },
       attendance: true,
     },
   });
+
+  const batch = await prisma.batch.findMany({
+    include:{
+      course:true,
+      lectureSchedules:true,
+      subjects:true
+    }
+  })
 
   return {
     branch,
     faculty,
     lectures,
+    batch
   };
 };
 
