@@ -4,6 +4,7 @@ import FacultyLectureStatusDonut from "@/components/chart/FacultyLectureStatusDo
 import FacultyPenaltyDonut from "@/components/chart/FacultyPenaltyDonut";
 import MonthlySalaryDonut from "@/components/chart/MonthlySalaryDonut";
 import SalaryBasedFacultyDonut from "@/components/chart/SalaryBasedFacultyDonut";
+import AllAttendance from "@/components/superAdmin/Models/AllAttendance";
 import SelectBranchModels from "@/components/superAdmin/Models/SelectBranchModels";
 import { Button } from "@/components/ui/button";
 import {
@@ -19,6 +20,8 @@ import React, { useEffect, useState } from "react";
 
 const ReportModels = ({ open, setOpen, user, setUser }) => {
   const [oping, setOping] = useState(false);
+
+  const [opn,setOpn] = useState(false)
 
   const list = [
     "Jan",
@@ -257,14 +260,14 @@ const ReportModels = ({ open, setOpen, user, setUser }) => {
                   </div>
                 </>
               ))}
-            <div className="w-full justify-center items-center">
+            <div className="w-full gap-2 flex justify-center items-center">
               <Button
                 onClick={
                   user?.role === "STAFF"
                     ? handleSendWhatsappMsg
                     : () => setOping(true)
                 }
-                className={`w-full mt-5 cursor-pointer bg-green-500 hover:bg-green-600 mx-auto`}
+                className={`w-1/2 mt-5 cursor-pointer bg-green-500 hover:bg-green-600 mx-auto`}
               >
                 <Image
                   src={"/whatsapp.png"}
@@ -274,6 +277,14 @@ const ReportModels = ({ open, setOpen, user, setUser }) => {
                   className="h-5 w-5"
                 />
                 Whatsapp
+              </Button>
+              <Button
+                onClick={() => {
+                  setOpn(true);
+                }}
+                className={`w-1/2 mt-5 cursor-pointer bg-[#be6b66] hover:bg-[#a85e5ae1]`}
+              >
+                Attendance
               </Button>
             </div>
           </div>
@@ -286,6 +297,8 @@ const ReportModels = ({ open, setOpen, user, setUser }) => {
         open={oping}
         setOpen={setOping}
       />
+
+      <AllAttendance mon={currentMon} yea={currentYear} open={opn} setOpen={setOpn} userdata={user} />
     </>
   );
 };

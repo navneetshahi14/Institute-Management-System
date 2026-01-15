@@ -29,6 +29,7 @@ const StaffModal = ({ open, setOpen }) => {
   const [actualoutTime, setActualOutTime] = useState(null);
   const [salary, setSalary] = useState(null);
   const [workingMinutesPerDay, setWorkingMinutesPerDay] = useState(null);
+  const [date,setDate] = useState(new Date())
 
   useEffect(() => {
     const loadData = async () => {
@@ -80,7 +81,6 @@ const StaffModal = ({ open, setOpen }) => {
     return new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate();
   };
 
-
   function calculateStaffAttendanceUI({
     monthlySalary,
     workingDays,
@@ -121,10 +121,12 @@ const StaffModal = ({ open, setOpen }) => {
     const extraMinutes = Math.max(0, actualWorkedMinutes - requiredMinutes);
 
     const overtimeMinutes = Math.floor(extraMinutes);
-    const overtimePay = overtimeMinutes >= 30 ? Math.floor((overtimeMinutes) * perMinuteRate) :0;
+    const overtimePay =
+      overtimeMinutes >= 30 ? Math.floor(overtimeMinutes * perMinuteRate) : 0;
 
     // ---- PENALTY ----
-    let fixedPenalty = (isLateBeyondGrace || shortfallMinutes > 15) ? FIXED_PENALTY : 0;
+    let fixedPenalty =
+      isLateBeyondGrace || shortfallMinutes > 15 ? FIXED_PENALTY : 0;
     let additionalPenalty = 0;
 
     if (shortfallMinutes >= GRACE_MINUTES) {
@@ -193,6 +195,7 @@ const StaffModal = ({ open, setOpen }) => {
           shiftEndTime: endTime,
           actualInTime: `${start}T${actualinTime}`,
           actualOutTime: `${end}T${actualoutTime}`,
+          date: date
         },
         {
           headers: {
@@ -231,6 +234,14 @@ const StaffModal = ({ open, setOpen }) => {
             </div>
 
             <div className="flex h-[90%] flex-col gap-5 [&>div]:flex [&>div]:flex-col [&>div]:gap-2 overflow-y-auto overflow-x-hidden">
+              <div>
+                <Label>Date</Label>
+                <Input
+                  value={date}
+                  type={`date`}
+                  onChange={(e) => setDate(e.target.value)}
+                />
+              </div>
               <div>
                 <Label>Branch</Label>
                 <Select onValueChange={(v) => setSelectBranch(v)}>
@@ -320,7 +331,11 @@ const StaffModal = ({ open, setOpen }) => {
                   type={`text`}
                   placeholder={`70mins`}
                   readOnly
-                  value={(staffPreview?.overtimeMinutes >= 30) ? staffPreview?.overtimeMinutes : 0 || 0}
+                  value={
+                    staffPreview?.overtimeMinutes >= 30
+                      ? staffPreview?.overtimeMinutes
+                      : 0 || 0
+                  }
                 />
               </div>
 

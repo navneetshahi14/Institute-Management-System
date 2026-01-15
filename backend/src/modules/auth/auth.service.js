@@ -105,15 +105,11 @@ const registerUser = async (data) => {
     facultyType,
   } = data;
 
-  console.log(shiftStartTime);
-  console.log(shiftEndTime);
   const today = new Date().toISOString().split("T")[0];
 
   const shiftStart = new Date(`${today}T${shiftStartTime}`);
   const shiftEnd = new Date(`${today}T${shiftEndTime}`);
 
-  console.log(shiftStart);
-  console.log(shiftEnd);
 
   const existingUser = await prisma.user.findUnique({
     where: { phoneNumber },

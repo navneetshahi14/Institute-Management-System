@@ -20,6 +20,8 @@ const HistoricalData = () => {
   const [branch, setBranch] = useState([]);
   const [bId, setBId] = useState({});
 
+  const [userId, setUserId] = useState(null);
+
   //   alert(year)
 
   const list = [
@@ -65,10 +67,11 @@ const HistoricalData = () => {
 
   const fetchHistory = async () => {
     const token = JSON.parse(localStorage.getItem("user")).data.token;
+
     const { data } = await axios.get(
       `${mainRoute}/api/upload/data?month=${month + 1}&year=${year}&id=${
         bId.id
-      }`,
+      }&role=${role}`,
       {
         headers: {
           "Content-Type": "application/json",
@@ -76,8 +79,13 @@ const HistoricalData = () => {
         },
       }
     );
-    console.log(data.data);
-    setHData(data.data);
+    if (userId) {
+      const filterdata = data.data.filter((us) => us.userId === userId);
+
+      setHData(filterdata);
+    } else {
+      setHData(data.data);
+    }
   };
 
   const mon = [
@@ -106,7 +114,25 @@ const HistoricalData = () => {
 
   //   console.log(years)
 
-  const { fetchBranch } = useManagement();
+  const { fetchBranch, fetchUser } = useManagement();
+
+  const [users, setUsers] = useState([]);
+  useEffect(() => {
+    const loadData = async () => {
+      const data = await fetchUser();
+
+      console.log(data);
+
+      const filterData = data.filter((use) => use.role === "FACULTY");
+
+      setUsers(filterData);
+    };
+    loadData();
+  }, []);
+
+  useEffect(() => {
+    fetchHistory();
+  }, [userId]);
 
   useEffect(() => {
     setBId(JSON.parse(localStorage.getItem("user")).data.user.branch);
@@ -115,7 +141,6 @@ const HistoricalData = () => {
       setBranch(data);
     };
     loadData();
-    fetchHistory();
   }, []);
   return (
     <>
@@ -146,20 +171,33 @@ const HistoricalData = () => {
                 ))}
               </SelectContent>
             </Select>
-            <Input value={bId.name} placeholder={`Branch`} readOnly />
+            <Input value={bId.name} readOnly />
             <Select value={role} onValueChange={(v) => setRole(v)}>
               <SelectTrigger>
                 <SelectValue placeholder={`Role`} />
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value={`FACULTY`}>Faculty</SelectItem>
-                <SelectItem value={`STAFF`}>Staff</SelectItem>
               </SelectContent>
             </Select>
 
             <Button onClick={fetchHistory} className={`cursor-pointer`}>
               Apply
             </Button>
+
+            <Select onValueChange={(v) => setUserId(v)}>
+              <SelectTrigger>
+                <SelectValue placeholder={`Role`} />
+              </SelectTrigger>
+              <SelectContent>
+                {users.map((item, i) => (
+                  <SelectItem key={i} value={item.id}>
+                    {item.name}
+                  </SelectItem>
+                ))}
+                <SelectItem value={null}>NONE</SelectItem>
+              </SelectContent>
+            </Select>
           </div>
           {/* <Button
             variant="secondary"

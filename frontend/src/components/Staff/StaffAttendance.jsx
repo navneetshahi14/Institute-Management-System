@@ -12,9 +12,33 @@ import axios from "axios";
 import { mainRoute } from "../apiroute";
 
 const StaffAttendance = () => {
-  const list = ["latest", "oldest"];
+  const list = [
+    "Jan",
+    "Feb",
+    "Mar",
+    "Apr",
+    "May",
+    "Jun",
+    "Jul",
+    "Aug",
+    "Sept",
+    "Oct",
+    "Nov",
+    "Dec",
+  ];
+
+  let cYear = new Date().getFullYear();
+
+  const years = Array.from(
+    {
+      length: cYear - 2024 + 1,
+    },
+    (_, i) => 2024 + i
+  );
 
   const [sortBy, setSortBy] = useState("latest");
+  const [mon, setMon] = useState(new Date().getMonth());
+  const [yea, setYea] = useState(new Date().getFullYear());
 
   const attendanceHistoryHeaders = [
     "Date",
@@ -37,7 +61,9 @@ const StaffAttendance = () => {
 
     const loadData = async () => {
       const { data } = await axios.get(
-        `${mainRoute}/api/users/role/dash?userId=${tokn.data.user.id}&branchId=${tokn.data.user.branch.id}`,
+        `${mainRoute}/api/staffAttendance/report?staffId=${
+          tokn.data.user.id
+        }&month=${mon + 1}&year=${yea}`,
         {
           headers: {
             "Content-Type": "application/json",
@@ -45,14 +71,15 @@ const StaffAttendance = () => {
           },
         }
       );
-      const facultyData = data.data.faculty;
+      console.log(data.data);
+      const facultyData = data.data;
       console.log(facultyData);
 
-      setStaffData(facultyData[0]);
+      setStaffData(facultyData);
     };
 
     loadData();
-  }, []);
+  }, [mon,yea]);
 
   const sortedAttendance = [...attendanceHistoryData].sort((a, b) => {
     const dateA = new Date(a.date);
@@ -66,8 +93,8 @@ const StaffAttendance = () => {
   });
 
   useEffect(() => {
-    console.log(staffData?.staffAttendances);
-    setAttendanceHistoryData(staffData?.staffAttendances || []);
+    console.log(staffData);
+    setAttendanceHistoryData(staffData || []);
   }, [staffData]);
 
   const formatTime = (isoTime) => {
@@ -94,12 +121,27 @@ const StaffAttendance = () => {
           <Label htmlFor={`Sort`} className={`uppercase`}>
             SortBy:
           </Label>
-          <Select onValueChange={(v) => setSortBy(v)} defaultValue="latest">
+          <Select
+            value={list[mon]}
+            onValueChange={(v) => setMon(list.indexOf(v))}
+          >
             <SelectTrigger id={`Sort`}>
               <SelectValue placeholder={`SortBy`} />
             </SelectTrigger>
             <SelectContent>
               {list.map((item, i) => (
+                <SelectItem key={i} value={item}>
+                  {item}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          <Select value={yea} onValueChange={(v) => setYea(v)}>
+            <SelectTrigger id={`Sort`}>
+              <SelectValue placeholder={`SortBy`} />
+            </SelectTrigger>
+            <SelectContent>
+              {years.map((item, i) => (
                 <SelectItem key={i} value={item}>
                   {item}
                 </SelectItem>

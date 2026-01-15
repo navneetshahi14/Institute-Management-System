@@ -23,7 +23,7 @@ const FacultyModal = ({ open, setOpen }) => {
 
   const [batch, setBatch] = useState([]);
   const [courses, setCourses] = useState([]);
-
+  const [date, setDate] = useState(new Date());
   const [status, setStatus] = useState(null);
   const [payout, setPayout] = useState(0);
 
@@ -253,7 +253,6 @@ const FacultyModal = ({ open, setOpen }) => {
   }
 
   useEffect(() => {
-    console.log(subjectId)
     if (
       !subjectId.startTime ||
       !subjectId.endTime ||
@@ -264,7 +263,7 @@ const FacultyModal = ({ open, setOpen }) => {
       return;
 
     const date = subjectId.startTime.split("T")[0];
-    console.log(subjectId)
+    console.log(subjectId);
 
     const result = calculateLectureBasedFaculty({
       plannedStart: new Date(subjectId.startTime),
@@ -314,6 +313,7 @@ const FacultyModal = ({ open, setOpen }) => {
           actualEndTime: `${today}T${actualOut}`,
           status: status,
           payout: payout,
+          date:date
         },
         {
           headers: {
@@ -342,7 +342,7 @@ const FacultyModal = ({ open, setOpen }) => {
         `${mainRoute}/api/attendance/faculty/attendance/mark`,
         {
           facultyId: facultyId.id,
-          date: today,
+          date: date,
           inTime: `${today}T${actualIn}`,
           outTime: `${today}T${actualOut}`,
           isLeave: status,
@@ -384,6 +384,15 @@ const FacultyModal = ({ open, setOpen }) => {
             </div>
 
             <div className="flex h-[90%] flex-col gap-5 [&>div]:flex [&>div]:flex-col [&>div]:gap-2 overflow-y-auto overflow-x-hidden">
+              <div>
+                <Label>Date</Label>
+                <Input
+                  value={date}
+                  type={`date`}
+                  onChange={(e) => setDate(e.target.value)}
+                />
+              </div>
+
               <div>
                 <Label>Branch</Label>
                 <Input type={`text`} value={branchs.name} readOnly />
@@ -545,7 +554,14 @@ const FacultyModal = ({ open, setOpen }) => {
                 >
                   Cancel
                 </Button>
-                <Button onClick={facultyId.facultyType === "LECTURE_BASED"?markAttendance:markSalaryBasedAttendance} className={`w-1/2`}>
+                <Button
+                  onClick={
+                    facultyId.facultyType === "LECTURE_BASED"
+                      ? markAttendance
+                      : markSalaryBasedAttendance
+                  }
+                  className={`w-1/2`}
+                >
                   Save
                 </Button>
               </div>

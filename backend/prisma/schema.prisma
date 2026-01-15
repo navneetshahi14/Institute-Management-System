@@ -104,8 +104,8 @@ model LectureAttendance {
 
   lectureId       Int
   date            DateTime    @default(now())
-  actualStartTime DateTime
-  actualEndTime   DateTime
+  actualStartTime DateTime?
+  actualEndTime   DateTime?
   status          StatusType  @default(CONDUCTED)
   payout          Int         @default(0)
   penalty         PenaltyType @default(NONE)
@@ -216,10 +216,12 @@ model HistoricalFacultyData {
   user   User?   @relation(fields: [userId], references: [id])
   branch Branch? @relation(fields: [branchId], references: [id])
   batch  Batch?  @relation(fields: [batchId], references: [id])
+
+  @@unique([userId, batchId, date, session])
 }
 
 model HistoricalStaffData {
-  id           Int      @id @default(autoincrement())
+  id           Int       @id @default(autoincrement())
   staffName    String?
   branchName   String?
   date         DateTime?

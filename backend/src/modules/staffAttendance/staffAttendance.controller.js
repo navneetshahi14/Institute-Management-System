@@ -9,6 +9,7 @@ const mark = async (req, res) => {
       shiftEndTime: new Date(req.body.shiftEndTime),
       actualInTime: new Date(req.body.actualInTime),
       actualOutTime: new Date(req.body.actualOutTime),
+      date:new Date(req.body.date)
     });
 
     res.json({

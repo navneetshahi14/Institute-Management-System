@@ -7,9 +7,8 @@ const {
 
 const markAttendance = async (req, res) => {
   try {
-    const { lectureId, actualStartTime, actualEndTime, payout, status } =
+    const { lectureId, actualStartTime, actualEndTime, payout, status, date } =
       req.body;
-      
 
     const record = await markLectureAttendance({
       lectureId: Number(lectureId),
@@ -17,6 +16,7 @@ const markAttendance = async (req, res) => {
       actualEndTime: new Date(actualEndTime),
       status: status,
       payout: Number(payout),
+      date: new Date(date),
     });
 
     res.json({
@@ -25,6 +25,7 @@ const markAttendance = async (req, res) => {
       data: record,
     });
   } catch (error) {
+    console.log(error)
     res.status(400).json({
       message: error.message,
     });
@@ -62,7 +63,7 @@ const markFacultyAttendanceController = async (req, res) => {
 
     res.json({
       message: "Faculty attendance marked Successfully",
-      data:attendance,
+      data: attendance,
     });
   } catch (err) {
     res.status(400).json({
@@ -85,8 +86,8 @@ const salaryBasedFacultySummaryController = async (req, res) => {
 
     res.json({
       message: "Faculty attendance marked Successfully",
-      data:summary,
-      success:true
+      data: summary,
+      success: true,
     });
   } catch (err) {
     res.status(400).json({
@@ -100,5 +101,5 @@ module.exports = {
   markAttendance,
   facultyMonthlySummaryController,
   markFacultyAttendanceController,
-  salaryBasedFacultySummaryController
+  salaryBasedFacultySummaryController,
 };

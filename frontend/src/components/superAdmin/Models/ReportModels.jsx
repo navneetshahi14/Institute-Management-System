@@ -16,10 +16,11 @@ import axios from "axios";
 import Image from "next/image";
 import React, { useEffect, useState } from "react";
 import SelectBranchModels from "./SelectBranchModels";
+import AllAttendance from "./AllAttendance";
 
 const ReportModels = ({ open, setOpen, user, setUser }) => {
-
-  const [oping,setOping] = useState(false)
+  const [oping, setOping] = useState(false);
+  const [opn, setOpn] = useState(false);
 
   const list = [
     "Jan",
@@ -67,6 +68,7 @@ const ReportModels = ({ open, setOpen, user, setUser }) => {
             },
           }
         );
+        console.log(data.data)
         setChartData(data.data);
       } else if (facultyRole === "FACULTY") {
         if (user?.facultyType === "LECTURE_BASED") {
@@ -113,8 +115,8 @@ const ReportModels = ({ open, setOpen, user, setUser }) => {
       month: "long",
     })}
 
-*Late Penalty*: ${chartData?.netPay}
-*Extra Penalty*: ${chartData?.breakdown?.fixedLatePenalties}
+*Late Penalty*: ${chartData?.breakdown?.fixedLatePenalties}
+*Extra Penalty*: ${chartData?.breakdown?.totalExtaPenalties}
 *Overtime Pay*: ${chartData?.breakdown?.totalOvertimePay}
 
 *This Month Salary*: ${chartData?.netPay}
@@ -218,10 +220,14 @@ const ReportModels = ({ open, setOpen, user, setUser }) => {
                   </div>
                 </>
               ))}
-            <div className="w-full justify-center items-center">
+            <div className="w-full gap-2 flex justify-center items-center">
               <Button
-                onClick={user?.role === "STAFF"? handleSendWhatsappMsg : ()=> setOping(true)}
-                className={`w-full mt-5 cursor-pointer bg-green-500 hover:bg-green-600 mx-auto`}
+                onClick={
+                  user?.role === "STAFF"
+                    ? handleSendWhatsappMsg
+                    : () => setOping(true)
+                }
+                className={`w-1/2 mt-5 cursor-pointer bg-green-500 hover:bg-green-600 mx-auto`}
               >
                 <Image
                   src={"/whatsapp.png"}
@@ -232,11 +238,32 @@ const ReportModels = ({ open, setOpen, user, setUser }) => {
                 />
                 Whatsapp
               </Button>
+              <Button
+                onClick={() => {
+                  setOpn(true);
+                }}
+                className={`w-1/2 mt-5 cursor-pointer bg-[#be6b66] hover:bg-[#a85e5ae1]`}
+              >
+                Attendance
+              </Button>
             </div>
           </div>
         </div>
       )}
-      <SelectBranchModels list={list} currentMon={currentMon} open={oping} setOpen={setOping} userdata={user} />
+      <SelectBranchModels
+        list={list}
+        currentMon={currentMon}
+        open={oping}
+        setOpen={setOping}
+        userdata={user}
+      />
+      <AllAttendance
+        mon={currentMon}
+        yea={currentYear}
+        open={opn}
+        setOpen={setOpn}
+        userdata={user}
+      />
     </>
   );
 };

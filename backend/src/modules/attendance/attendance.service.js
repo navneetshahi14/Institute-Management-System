@@ -66,7 +66,8 @@ function calculateLectureBasedFacultyBackend({
   const plannedEndTime = new Date(plannedEnd);
   const actualStartTime = new Date(actualStart);
   const actualEndTime = new Date(actualEnd);
-  console.log(lectureRate)
+
+  console.log(actualStartTime - plannedStartTime)
 
   // ---------- PENALTY LABEL ----------
   const lateMinutes = Math.max(
@@ -79,8 +80,9 @@ function calculateLectureBasedFacultyBackend({
     (plannedEndTime - actualEndTime) / (1000 * 60)
   );
 
-  const isLate = lateMinutes > ALLOWED_MINUTES;
-  const isEarly = earlyMinutes > ALLOWED_MINUTES;
+  console.log(lateMinutes)
+  const isLate = lateMinutes > FIFTEEN_MIN;
+  const isEarly = earlyMinutes > FIFTEEN_MIN;
 
   let penalty = "NONE";
   if (isLate && isEarly) penalty = "BOTH";
@@ -119,6 +121,7 @@ const markLectureAttendance = async ({
   actualStartTime,
   actualEndTime,
   status,
+  date
 }) => {
   const lecture = await prisma.lectureSchedule.findUnique({
     where: { id: lectureId },
@@ -179,9 +182,9 @@ const markLectureAttendance = async ({
       penalty:penalty.penalty,
       payout:payout !== NaN ? payout : 0,
       status,
+      date: date
     },
   });
-  console.log(data)
   return data
 };
 

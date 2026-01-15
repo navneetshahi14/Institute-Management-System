@@ -27,6 +27,15 @@ const StaffSalary = () => {
     "Dec",
   ];
 
+  let cYear = new Date().getFullYear();
+
+  const years = Array.from(
+    {
+      length: cYear - 2024 + 1,
+    },
+    (_, i) => 2024 + i
+  );
+
   const salaryTableHeaders = [
     "Date",
     "In Time",
@@ -55,6 +64,7 @@ const StaffSalary = () => {
   const [staffData, setStaffData] = useState({});
 
   const [selectedMonth, setSelectedMonth] = useState(new Date().getMonth());
+  const [selectYear, setSelectedYear] = useState(new Date().getFullYear());
   const [salaryTableData, setSalaryTableData] = useState([]);
 
   useEffect(() => {
@@ -73,7 +83,7 @@ const StaffSalary = () => {
           },
         }
       );
-      const facultyData = data.data.faculty
+      const facultyData = data.data.faculty;
       console.log(facultyData);
 
       setStaffData(facultyData[0]);
@@ -83,14 +93,14 @@ const StaffSalary = () => {
   }, []);
 
   useEffect(() => {
-    console.log(staffData.staffAttendances)
+    console.log(staffData.staffAttendances);
     const monthAttendances =
       staffData?.staffAttendances?.filter((att) => {
         const d = new Date(att.date);
-        return d.getMonth() === selectedMonth
+        return d.getMonth() === selectedMonth && d.getFullYear() === selectYear;
       }) || [];
 
-      console.log(monthAttendances)
+    console.log(monthAttendances);
     const salaryTableData = monthAttendances.map((att) => ({
       date: formatDate(att.date),
       inTime: formatTime(att.actualInTime),
@@ -101,10 +111,10 @@ const StaffSalary = () => {
       totalPenalty: att.totalPenalty || 0,
       lateMinutes: att.lateMinutes,
     }));
-    console.log(salaryTableData)
+    console.log(salaryTableData);
 
     setSalaryTableData(salaryTableData);
-  }, [selectedMonth, staffData]);
+  }, [selectedMonth, staffData,selectYear]);
 
   return (
     <>
@@ -114,12 +124,30 @@ const StaffSalary = () => {
           <Label htmlFor={`Sort`} className={`uppercase`}>
             SortBy:
           </Label>
-          <Select value={list[selectedMonth]} onValueChange={(v) => setSelectedMonth(list.indexOf(v))}>
+          <Select
+            value={list[selectedMonth]}
+            onValueChange={(v) => setSelectedMonth(list.indexOf(v))}
+          >
             <SelectTrigger id={`Sort`}>
               <SelectValue placeholder={`SortBy`} />
             </SelectTrigger>
             <SelectContent>
               {list.map((item, i) => (
+                <SelectItem key={i} value={item}>
+                  {item}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          <Select
+            value={selectYear}
+            onValueChange={(v) => setSelectedYear(v)}
+          >
+            <SelectTrigger id={`Sort`}>
+              <SelectValue placeholder={`SortBy`} />
+            </SelectTrigger>
+            <SelectContent>
+              {years.map((item, i) => (
                 <SelectItem key={i} value={item}>
                   {item}
                 </SelectItem>

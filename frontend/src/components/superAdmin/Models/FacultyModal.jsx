@@ -27,6 +27,7 @@ const FacultyModal = ({ open, setOpen }) => {
   const [course, setCourse] = useState(null);
 
   const [us, setUs] = useState({});
+  const [date, setDate] = useState(new Date());
 
   const [status, setStatus] = useState(null);
   const [payout, setPayout] = useState(0);
@@ -339,6 +340,7 @@ const FacultyModal = ({ open, setOpen }) => {
           actualEndTime: `${today}T${outTime}`,
           status: status,
           payout: payout,
+          date,
         },
         {
           headers: {
@@ -361,13 +363,12 @@ const FacultyModal = ({ open, setOpen }) => {
     try {
       let tok = JSON.parse(localStorage.getItem("user")).data.token;
       let today = new Date();
-      alert(today)
 
       const { data } = axios.post(
         `${mainRoute}/api/attendance/faculty/attendance/mark`,
         {
           facultyId: selectFaculty.id,
-          date: today,
+          date: date,
           inTime: inTime,
           outTime: outTime,
           isLeave: status,
@@ -408,6 +409,14 @@ const FacultyModal = ({ open, setOpen }) => {
             </div>
 
             <div className="flex h-[90%] flex-col gap-5 [&>div]:flex [&>div]:flex-col [&>div]:gap-2 overflow-y-auto overflow-x-hidden">
+              <div>
+                <Label>Date</Label>
+                <Input
+                  value={date}
+                  type={`date`}
+                  onChange={(e) => setDate(e.target.value)}
+                />
+              </div>
               <div>
                 <Label>Branch</Label>
                 <Select onValueChange={(v) => setSelectedBranch(v)}>

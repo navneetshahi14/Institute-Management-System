@@ -35,15 +35,16 @@ const UserManagement = () => {
       },
     });
 
-    const filterdata = data.data.filter(
-      (user) => user.id !== tok.data.user.id
-    );
+    console.log(data.data);
+    console.log()
+
+    const filterdata = data.data.filter((user) => user.id !== tok.data.user.id);
     console.log(filterdata);
     setUser(filterdata);
   };
-  useEffect(() => {
-    
 
+
+  useEffect(() => {
     fetchUser();
   }, []);
 
@@ -94,7 +95,11 @@ const UserManagement = () => {
                   <li>{user.phoneNumber}</li>
                   <li>{formatRole(user.role)}</li>
                   <li>{user.branch?.name || "-"}</li>
-                  <li>{(user.facultyType === "LECTURE_BASED") ? user.lectureRate : user.salary }</li>
+                  <li>
+                    {user.facultyType === "LECTURE_BASED"
+                      ? user.lectureRate
+                      : user.salary}
+                  </li>
                   <li>{user.createdAt.split("T")[0]}</li>
                   <li className="flex justify-center">
                     <ActionButton
@@ -111,12 +116,17 @@ const UserManagement = () => {
           ) : (
             <div className="h-[50vh] flex justify-center items-center">
               <p className="text-center my-5 text-xl">No Users</p>
-
             </div>
           )}
         </div>
       </div>
-      <UserModal open={open} setOpen={setOpen} type={type} user={us} refetch={fetchUser} />
+      <UserModal
+        open={open}
+        setOpen={setOpen}
+        type={type}
+        user={us}
+        refetch={fetchUser}
+      />
     </>
   );
 };

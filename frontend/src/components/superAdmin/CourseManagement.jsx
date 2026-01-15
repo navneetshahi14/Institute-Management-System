@@ -77,7 +77,7 @@ const CourseManagement = () => {
                     <li>{cour?.name}</li>
                     <li>{cour?.batches?.length}</li>
                     <li>{cour?.branch?.name}</li>
-                    <li>{cour?.branch?.users?.filter((user)=>user.role === "BRANCH_ADMIN").find((user)=>user.branchId === cour.branchId).name || "-"}</li>
+                    <li>{cour?.branch?.users?.filter((user)=>user.role === "BRANCH_ADMIN").find((user)=>user.branchId === cour.branchId)?.name || "-"}</li>
                     <li>
                         <ActionBtn setOp={setOpen} setType={setType} lecu={cour} setlecture={setCourse} />
                     </li>

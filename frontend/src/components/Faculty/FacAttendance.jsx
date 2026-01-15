@@ -13,8 +13,6 @@ import axios from "axios";
 import { mainRoute } from "../apiroute";
 
 const FacAttendance = () => {
-  const list = ["latest", "oldest"];
-
   const formatDate = (iso) =>
     new Date(iso).toLocaleDateString("en-IN", {
       day: "2-digit",
@@ -81,6 +79,7 @@ const FacAttendance = () => {
   // };
 
   const mapLecturesToUI = (lectures) => {
+    console.log(lectures);
     return (
       lectures
         .filter(
@@ -177,6 +176,8 @@ const FacAttendance = () => {
   const [myLecturesData, setMyLecturesData] = useState([]);
   const [typ, setType] = useState("LECTURE_BASED");
   const [lecData, setLecData] = useState([]);
+  const [currentmon, setCurrentMon] = useState(new Date().getMonth());
+  const [currentyea, setCurrentYea] = useState(new Date().getFullYear());
 
   useEffect(() => {
     const tok = JSON.parse(localStorage.getItem("user"));
@@ -186,7 +187,7 @@ const FacAttendance = () => {
     console.log(tok.data.user);
     const loadData = async () => {
       const { data } = await axios.get(
-        `${mainRoute}/api/lecture/lectureatt?id=${id}&type=${type}`,
+        `${mainRoute}/api/lecture/lectureatt?id=${id}&type=${type}&month=${currentmon+1}&year=${currentyea}`,
         {
           headers: {
             "Content-Type": "application/json",
@@ -200,7 +201,7 @@ const FacAttendance = () => {
       setServerdata(data.data);
     };
     loadData();
-  }, []);
+  }, [currentmon, currentyea]);
 
   useEffect(() => {
     if (typ === "LECTURE_BASED") {
@@ -212,27 +213,65 @@ const FacAttendance = () => {
     }
   }, [serverdata]);
 
+  const list = [
+    "Jan",
+    "Feb",
+    "Mar",
+    "Apr",
+    "May",
+    "Jun",
+    "Jul",
+    "Aug",
+    "Sep",
+    "Oct",
+    "Nov",
+    "Dec",
+  ];
+
+  let cYear = new Date().getFullYear();
+
+  const years = Array.from(
+    {
+      length: cYear - 2024 + 1,
+    },
+    (_, i) => 2024 + i
+  );
+
   return (
     <>
       <div className="h-full bg-white m-2 rounded flex flex-col overflow-hidden items-center">
         {/* filter */}
-        {/* <div className="w-full flex justify-end p-2  gap-2">
-          <Label htmlFor={`Sort`} className={`uppercase`}>
-            SortBy:
-          </Label>
-          <Select>
-            <SelectTrigger id={`Sort`}>
-              <SelectValue placeholder={`SortBy`} />
-            </SelectTrigger>
-            <SelectContent>
-              {list.map((item, i) => (
-                <SelectItem key={i} value={item}>
-                  {item}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div> */}
+
+        <div className="w-full flex justify-end p-2  gap-2">
+          <div className="flex gap-4 border-b-2 pb-2">
+            {/* <p className="text-xl font-semibold"></p> */}
+            <Select value={currentmon} onValueChange={(v) => setCurrentMon(v)}>
+              <SelectTrigger className={`w-45`}>
+                <SelectValue placeholder={"Role"} />
+              </SelectTrigger>
+              <SelectContent>
+                {list.map((item, i) => (
+                  <SelectItem key={i} value={i}>
+                    {item}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+
+            <Select value={currentyea} onValueChange={(v) => setCurrentYea(v)}>
+              <SelectTrigger className={`w-45`}>
+                <SelectValue placeholder={"Year"} />
+              </SelectTrigger>
+              <SelectContent>
+                {years.map((item, i) => (
+                  <SelectItem key={i} value={item}>
+                    {item}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+        </div>
 
         {/* data */}
         <div className="w-[98%]  h-full items-center overflow-auto xl:overflow-x-hidden">
@@ -299,9 +338,7 @@ const FacAttendance = () => {
                 <li>{formatTime(item.inTime || "") || "-"}</li>
                 <li>{formatTime(item.outTime || "") || "-"}</li>
                 <li
-                  className={
-                    !item.isLeave ? "text-green-600" : "text-red-600"
-                  }
+                  className={!item.isLeave ? "text-green-600" : "text-red-600"}
                 >
                   {item.isLeave ? "On Leave" : "Present"}
                 </li>

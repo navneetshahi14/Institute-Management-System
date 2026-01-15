@@ -149,6 +149,7 @@ const markStaffAttendance = async ({
   shiftEndTime,
   actualInTime,
   actualOutTime,
+  date
 }) => {
   const staff = await prisma.user.findUnique({
     where: { id: staffId },
@@ -170,18 +171,16 @@ const markStaffAttendance = async ({
   // let date1 = new Date();
   // let date = new Date(date1.setHours(0, 0, 0, 0));
 
-  let date = new Date();
-  console.log(date);
+  let date1 = new Date(date);
 
-  date.setUTCHours(0, 0, 0, 0);
 
-  console.log(date);
+  date1.setUTCHours(0, 0, 0, 0);
 
   return await prisma.staffAttendance.create({
     data: {
       staffId,
       branchId,
-      date,
+      date:date,
       shiftStartTime,
       shiftEndTime,
       actualInTime,

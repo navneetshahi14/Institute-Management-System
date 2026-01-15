@@ -69,41 +69,49 @@ const createlectureSchedule = async (
   });
 };
 
-const getLectureByIdAndType = async(id,type) => {
-  if(type === "LECTURE_BASED"){
+const getLectureByIdAndType = async (id, type, month, year) => {
+  const start = new Date(year, month - 1, 1);
+  const end = new Date(year, month, 0, 23, 59, 59);
+  if (type === "LECTURE_BASED") {
     return await prisma.lectureSchedule.findMany({
-      where:{
-        facultyId:Number(id)
+      where: {
+        facultyId: Number(id),
       },
-      include:{
-        attendance:true,
-        subject:true
-      }
-
-    })
-  }else{
+      include: {
+        attendance: {
+          where:{
+            date:{
+              gte:start,
+              lte:end
+            }
+          }
+        },
+        subject: true,
+      },
+    });
+  } else {
     return await prisma.facultyAttendance.findMany({
-      where:{
-        facultyId:Number(id)
+      where: {
+        facultyId: Number(id),
       },
-      include:{
-        faculty:true
-      }
-    })
+      include: {
+        faculty: true,
+      },
+    });
   }
-}
+};
 
-const getLecture = async(id) => {
+const getLecture = async (id) => {
   return await prisma.lectureSchedule.findMany({
-    where:{
-      facultyId:Number(id)
+    where: {
+      facultyId: Number(id),
     },
-    include:{
+    include: {
       subject: true,
-      batch:true,
-    }
-  })
-}
+      batch: true,
+    },
+  });
+};
 
 const getLectureByBranchAndDate = async (batchId, date) => {
   const dayStart = new Date(`${date}T00:00:00`);
@@ -137,14 +145,14 @@ const getAllLecture = async () => {
       faculty: true,
       // branch: true,
       batch: {
-        include:{
-          course:{
-            include:{
-              branch:true
-            }
+        include: {
+          course: {
+            include: {
+              branch: true,
+            },
           },
-          lectureSchedules:true
-        }
+          lectureSchedules: true,
+        },
       },
       attendance: true,
     },
@@ -193,5 +201,5 @@ module.exports = {
   deleteLecture,
   updateLecture,
   getLectureByIdAndType,
-  getLecture
+  getLecture,
 };

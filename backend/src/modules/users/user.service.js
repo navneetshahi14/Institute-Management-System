@@ -185,6 +185,11 @@ const updateUser = async (
 
     const shiftStart = new Date(`${today}T${shiftStartTime}`);
     const shiftEnd = new Date(`${today}T${shiftEndTime}`);
+
+    const workingMinutesPerDay = Math.floor(
+      (shiftEnd - shiftStart) / (1000 * 60)
+    );
+
     return await prisma.user.update({
       where: { id },
       data: {
@@ -195,6 +200,7 @@ const updateUser = async (
         shiftStartTime: shiftStart,
         shiftEndTime: shiftEnd,
         salary: Number(salary),
+        workingMinutesPerDay: workingMinutesPerDay,
       },
     });
   } else {
@@ -203,6 +209,11 @@ const updateUser = async (
 
       const shiftStart = new Date(`${today}T${shiftStartTime}`);
       const shiftEnd = new Date(`${today}T${shiftEndTime}`);
+
+      const workingMinutesPerDay = Math.floor(
+        (shiftEnd - shiftStart) / (1000 * 60)
+      );
+
       return await prisma.user.update({
         where: { id },
         data: {
@@ -213,6 +224,7 @@ const updateUser = async (
           salary: Number(salary),
           shiftEndTime: shiftEnd,
           shiftStartTime: shiftStart,
+          workingMinutesPerDay: workingMinutesPerDay,
         },
       });
     }
@@ -304,8 +316,8 @@ const branchDashoard = async () => {
 
 const userDashboard = async ({ branchId, userId }) => {
   const branch = await prisma.branch.findMany({
-    where:{
-      id:branchId
+    where: {
+      id: branchId,
     },
     include: {
       courses: {
@@ -331,8 +343,8 @@ const userDashboard = async ({ branchId, userId }) => {
   });
 
   const faculty = await prisma.user.findMany({
-    where:{
-      id:userId
+    where: {
+      id: userId,
     },
     include: {
       facultySubjects: {
@@ -347,8 +359,8 @@ const userDashboard = async ({ branchId, userId }) => {
   });
 
   const lectures = await prisma.lectureSchedule.findMany({
-    where:{
-      facultyId:userId
+    where: {
+      facultyId: userId,
     },
     include: {
       faculty: true,
@@ -390,5 +402,5 @@ module.exports = {
   branchDashoard,
   updateUser,
   deleteUser,
-  userDashboard
+  userDashboard,
 };

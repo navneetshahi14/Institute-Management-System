@@ -84,9 +84,9 @@ const getByBranchAndDate = async (req, res) => {
 const getLecturesbyId = async(req,res) =>{
   try{
 
-    const {id,type} = req.query;
+    const {id,type,month,year} = req.query;
 
-    const data = await lectureService.getLectureByIdAndType(id,type)
+    const data = await lectureService.getLectureByIdAndType(id,type,month,year)
 
     res.json({
       message:"Data of lecture by id and type",

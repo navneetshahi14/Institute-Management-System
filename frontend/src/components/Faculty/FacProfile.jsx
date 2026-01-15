@@ -80,7 +80,7 @@ const FacProfile = () => {
               {
                 users?.branch?.users
                   .filter((user) => user.branchId === users.branchId)
-                  .find((user) => user.role === "BRANCH_ADMIN").name
+                  .find((user) => user.role === "BRANCH_ADMIN")?.name
               }
             </span>
           </li>
