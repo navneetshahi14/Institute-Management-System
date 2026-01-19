@@ -19,13 +19,29 @@ const LectureModal = ({ open, setOpen, type, lec, refetch }) => {
   const router = useRouter();
   const isoTo24Hour = (isoString) => {
     if (!isoString) return "";
-    const date = new Date(isoString);
+    const safeIso = isoString.replace("Z", "");
+    const date = new Date(safeIso);
     return date.toLocaleTimeString("en-IN", {
       hour: "2-digit",
       minute: "2-digit",
       hour12: false,
     });
   };
+
+  function formatTime(isoIst) {
+    if (!isoIst) return "";
+
+    // 🔥 remove Z so JS treats it as local time
+    const safeIso = isoIst.replace("Z", "");
+
+    const date = new Date(safeIso);
+
+    return date.toLocaleTimeString("en-IN", {
+      hour: "numeric",
+      minute: "2-digit",
+      hour12: true,
+    });
+  }
 
   const [branch, setBranch] = useState([]);
   const [subject, setSubject] = useState([]);
@@ -135,7 +151,7 @@ const LectureModal = ({ open, setOpen, type, lec, refetch }) => {
         });
 
         const filtereddata = data.data.filter(
-          (batch) => batch.course.id === courseId
+          (batch) => batch.course.id === courseId,
         );
         // console.log(filtereddata);
         setBatch(filtereddata);
@@ -181,7 +197,7 @@ const LectureModal = ({ open, setOpen, type, lec, refetch }) => {
             "Content-Type": "application/json",
             Authorization: `Bearer ${token}`,
           },
-        }
+        },
       );
 
       toast.success("Lecture Created Successfully");
@@ -220,7 +236,7 @@ const LectureModal = ({ open, setOpen, type, lec, refetch }) => {
             "Content-Type": "application/json",
             Authorization: `Bearer ${token}`,
           },
-        }
+        },
       );
 
       toast.success("Lecture successfully edited");
@@ -560,7 +576,8 @@ const LectureModal = ({ open, setOpen, type, lec, refetch }) => {
                     You Want To Delete{" "}
                     <span className="font-bold text-2xl text-red-600">
                       {lec?.subject?.name}
-                    </span>{" "}Lecture
+                    </span>{" "}
+                    Lecture
                   </p>
                   <Button
                     onClick={deleteBranch}

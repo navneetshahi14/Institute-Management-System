@@ -51,13 +51,20 @@ const FacultyModal = ({ open, setOpen }) => {
   const { fetchBranch, fetchUser, fetchSubject, fetchLecture, fetchCourse } =
     useManagement();
 
-  const formatTime = (isoTime) => {
-    return new Date(isoTime).toLocaleTimeString("en-IN", {
+  function formatTime(isoIst) {
+    if (!isoIst) return "";
+
+    // 🔥 remove Z so JS treats it as local time
+    const safeIso = isoIst.replace("Z", "");
+
+    const date = new Date(safeIso);
+
+    return date.toLocaleTimeString("en-IN", {
       hour: "numeric",
       minute: "2-digit",
       hour12: true,
     });
-  };
+  }
 
   useEffect(() => {
     const loadBranch = async () => {
@@ -74,7 +81,7 @@ const FacultyModal = ({ open, setOpen }) => {
       const courseData = await fetchCourse();
 
       const filterCourse = courseData.filter(
-        (course) => course.branchId === selectedBranch
+        (course) => course.branchId === selectedBranch,
       );
       console.log(filterCourse);
 
@@ -95,7 +102,7 @@ const FacultyModal = ({ open, setOpen }) => {
       });
 
       const filtereddata = data.data.filter(
-        (batch) => batch.courseId === course
+        (batch) => batch.courseId === course,
       );
       // console.log(filtereddata);
       setBatch(filtereddata);
@@ -121,7 +128,7 @@ const FacultyModal = ({ open, setOpen }) => {
     }
 
     const branchWiseFaculty = users.filter(
-      (user) => user.branchId === Number(selectedBranch)
+      (user) => user.branchId === Number(selectedBranch),
     );
 
     setFilteredFaculty(branchWiseFaculty);
@@ -133,7 +140,7 @@ const FacultyModal = ({ open, setOpen }) => {
       return;
     }
     const lectureWiseFilter = lec.filter(
-      (user) => user.faculty.id === Number(selectFaculty.id)
+      (user) => user.faculty.id === Number(selectFaculty.id),
     );
 
     setFacultyType(selectFaculty.facultyType);
@@ -186,53 +193,6 @@ const FacultyModal = ({ open, setOpen }) => {
 
   const FIFTEEN_MIN = 15 * 60 * 1000;
 
-  // const calculateFacultyPenaltyUI = ({
-  //   plannedStart,
-  //   plannedEnd,
-  //   actualStart,
-  //   actualEnd,
-  //   // isCancelledNoStudents,
-  //   lectureAmount,
-  // }) => {
-  //   // if (isCancelledNoStudents) {
-  //   //   return {
-  //   //     penalty: "NONE",
-  //   //     payableAmount: lectureAmount / 2,
-  //   //     message: "Lecture cancelled (No Students) – 50% Pay",
-  //   //   };
-  //   // }
-
-  //   let isLate = false;
-  //   let isEarly = false;
-
-  //   if (actualStart - plannedStart > FIFTEEN_MIN) {
-  //     isLate = true;
-  //   }
-
-  //   if (plannedEnd - actualEnd > FIFTEEN_MIN) {
-  //     isEarly = true;
-  //   }
-
-  //   let penalty = "NONE";
-
-  //   if (isLate && isEarly) penalty = "BOTH";
-  //   else if (isLate) penalty = "LATE_START";
-  //   else if (isEarly) penalty = "EARLY_END";
-
-  //   return {
-  //     penalty,
-  //     payableAmount: lectureAmount,
-  //     message:
-  //       penalty === "NONE"
-  //         ? "No Penalty"
-  //         : penalty === "LATE_START"
-  //         ? "Late Start Penalty"
-  //         : penalty === "EARLY_END"
-  //         ? "Early End Penalty"
-  //         : "Late Start + Early End Penalty",
-  //   };
-  // };
-
   const LECTURE_MINUTES = 120;
 
   function calculateLectureBasedFaculty({
@@ -243,6 +203,8 @@ const FacultyModal = ({ open, setOpen }) => {
     lectureRate,
   }) {
     const FIFTEEN_MIN = 15 * 60 * 1000;
+    console.log(plannedStart)
+    console.log(actualStart)
 
     let isLate = actualStart - plannedStart > FIFTEEN_MIN;
     let isEarly = plannedEnd - actualEnd > FIFTEEN_MIN;
@@ -254,7 +216,7 @@ const FacultyModal = ({ open, setOpen }) => {
 
     const workedMinutes = Math.max(
       0,
-      Math.floor((actualEnd - actualStart) / (1000 * 60))
+      Math.floor((actualEnd - actualStart) / (1000 * 60)),
     );
 
     const lectureEquivalent = workedMinutes / LECTURE_MINUTES;
@@ -274,10 +236,10 @@ const FacultyModal = ({ open, setOpen }) => {
         penalty === "NONE"
           ? "On Time"
           : penalty === "LATE_START"
-          ? "Late Start"
-          : penalty === "EARLY_END"
-          ? "Early End"
-          : "Late + Early",
+            ? "Late Start"
+            : penalty === "EARLY_END"
+              ? "Early End"
+              : "Late + Early",
     };
   }
 
@@ -304,8 +266,8 @@ const FacultyModal = ({ open, setOpen }) => {
     const date = lecture.startTime.split("T")[0];
 
     const result = calculateLectureBasedFaculty({
-      plannedStart: new Date(lecture.startTime),
-      plannedEnd: new Date(lecture.endTime),
+      plannedStart: new Date(lecture.startTime.replace("Z","")),
+      plannedEnd: new Date(lecture.endTime.replace("Z","")),
       actualStart: new Date(`${date}T${inTime}`),
       actualEnd: new Date(`${date}T${outTime}`),
       lectureRate: selectFaculty.lectureRate,
@@ -347,7 +309,7 @@ const FacultyModal = ({ open, setOpen }) => {
             "Content-Type": "application/json",
             Authorization: `Bearer ${token}`,
           },
-        }
+        },
       );
       toast.success("Attendance Marked Successfully");
       setOpen(false);
@@ -378,7 +340,7 @@ const FacultyModal = ({ open, setOpen }) => {
             "Content-Type": "application/json",
             Authorization: `Bearer ${tok}`,
           },
-        }
+        },
       );
 
       toast.success("Attendance Marked Successfully");

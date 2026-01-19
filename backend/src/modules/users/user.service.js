@@ -115,8 +115,10 @@ const makeBrancheAdmin = async (userId, branchId) => {
     throw new Error("Branch not found");
   }
 
+  console.log(branch.userId);
   // 2️⃣ Agar branch pe pehle se admin hai → usko revert karo
   if (branch.userId) {
+    console.log("Branch user", branch.userId);
     const oldAdmin = await prisma.user.findUnique({
       where: { id: branch.userId },
       select: {
@@ -139,6 +141,7 @@ const makeBrancheAdmin = async (userId, branchId) => {
   const user = await prisma.user.findUnique({
     where: { id: userId },
   });
+  console.log("user",user);
 
   if (!user) {
     throw new Error("User not found");
@@ -158,13 +161,16 @@ const makeBrancheAdmin = async (userId, branchId) => {
     },
   });
 
+  console.log("Updated User",updatedUser);
+
   // 5️⃣ Branch ko naye admin se link karo
-  await prisma.branch.update({
+  const newAdmin = await prisma.branch.update({
     where: { id: branchId },
     data: {
       userId: userId,
     },
   });
+  console.log("New Admin", newAdmin);
 
   return updatedUser;
 };
@@ -347,15 +353,15 @@ const userDashboard = async ({ branchId, userId }) => {
           },
         },
       },
-users: {
-  select: {
-    id: true,
-    name: true,
-    phoneNumber: true,
-    role: true,
-    branchId: true,
-  },
-},
+      users: {
+        select: {
+          id: true,
+          name: true,
+          phoneNumber: true,
+          role: true,
+          branchId: true,
+        },
+      },
       staffAttendances: true,
     },
   });
