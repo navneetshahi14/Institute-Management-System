@@ -14,7 +14,7 @@ export const MainBoard = () => {
     let token = tokn.data.token;
     const loadData = async () => {
       const { data } = await axios.get(
-        `${mainRoute}/api/users/dashboad`,
+        `${mainRoute}/api/users/dashboard`,
         {
           headers: {
             "Content-Type": "application/json",

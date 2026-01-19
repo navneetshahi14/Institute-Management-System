@@ -247,7 +247,7 @@ const deleteUser = async (id) => {
   });
 };
 
-const branchDashoard = async () => {
+const branchDashboard = async () => {
   const branch = await prisma.branch.findMany({
     include: {
       courses: {
@@ -347,11 +347,15 @@ const userDashboard = async ({ branchId, userId }) => {
           },
         },
       },
-      users: {
-        omit: {
-          password: true,
-        },
-      },
+users: {
+  select: {
+    id: true,
+    name: true,
+    phoneNumber: true,
+    role: true,
+    branchId: true,
+  },
+},
       staffAttendances: true,
     },
   });
@@ -413,7 +417,7 @@ module.exports = {
   getUsersByBranch,
   makeBrancheAdmin,
   getAllUser,
-  branchDashoard,
+  branchDashboard,
   updateUser,
   deleteUser,
   userDashboard,
