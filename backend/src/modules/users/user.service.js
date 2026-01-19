@@ -67,7 +67,6 @@ const getAllUser = async () => {
       role: true,
       createdAt: true,
       branchId: true,
-      isActive:true,
       branch: {
         include: {
           users: true,
@@ -101,6 +100,7 @@ const getAllUser = async () => {
       facultyType: true,
       lectureRate: true,
       workingMinutesPerDay: true,
+      isActive:true
     },
   });
 };
