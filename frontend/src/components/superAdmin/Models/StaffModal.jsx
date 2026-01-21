@@ -117,6 +117,9 @@ const StaffModal = ({ open, setOpen }) => {
       Math.floor((actualIn - scheduledIn) / (1000 * 60)),
     );
 
+    console.log(lateMinutes)
+    console.log(perMinuteRate)
+
     const isLateBeyondGrace = lateMinutes > GRACE_MINUTES;
 
     // ---- SHORTFALL ----
@@ -135,7 +138,7 @@ const StaffModal = ({ open, setOpen }) => {
     let additionalPenalty = 0;
 
     if (shortfallMinutes >= GRACE_MINUTES) {
-      const penaltyMinutes = shortfallMinutes - GRACE_MINUTES;
+      const penaltyMinutes = shortfallMinutes;
       additionalPenalty = penaltyMinutes * perMinuteRate;
     }
 
@@ -171,8 +174,8 @@ const StaffModal = ({ open, setOpen }) => {
       monthlySalary: salary,
       workingDays: workingDays,
       workingMinutesPerDay: workingMinutesPerDay,
-      scheduledIn: new Date(startTime),
-      scheduledOut: new Date(endTime),
+      scheduledIn: new Date(startTime.replace("Z","")),
+      scheduledOut: new Date(endTime.replace("Z","")),
       actualIn: new Date(`${start}T${actualinTime}`),
       actualOut: actualoutTime ? new Date(`${end}T${actualoutTime}`) : null,
     });

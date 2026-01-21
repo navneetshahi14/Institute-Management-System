@@ -49,12 +49,13 @@ const LectureManagement = () => {
   ];
 
   function formatTime(isoIst) {
+    console.log(isoIst)
     if (!isoIst) return "";
 
     // 🔥 remove Z so JS treats it as local time
-    const safeIso = isoIst.replace("Z", "");
+    // const safeIso = isoIst.replace("Z", "");
 
-    const date = new Date(safeIso);
+    const date = new Date(isoIst);
 
     return date.toLocaleTimeString("en-IN", {
       hour: "numeric",

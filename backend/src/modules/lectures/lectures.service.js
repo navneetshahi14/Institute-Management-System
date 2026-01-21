@@ -13,8 +13,14 @@ const createlectureSchedule = async (
   },
   currentUser
 ) => {
+
+  console.log("StartTime",startTime)
+  console.log("EndTime",endTime)
   const startDateTime = new Date(`${StartDate}T${startTime}`);
   const endDateTime = new Date(`${StartDate}T${endTime}`);
+
+  console.log("Date set krna",new Date(startTime))
+  console.log("start Date",startDateTime)
 
   if (endDateTime <= startDateTime) {
     throw new Error("End time must be after start time");

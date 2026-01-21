@@ -19,7 +19,7 @@ const LectureModal = ({ open, setOpen, type, lec, refetch }) => {
   const router = useRouter();
   const isoTo24Hour = (isoString) => {
     if (!isoString) return "";
-    const safeIso = isoString.replace("Z", "");
+    const safeIso = isoString;
     const date = new Date(safeIso);
     return date.toLocaleTimeString("en-IN", {
       hour: "2-digit",
@@ -135,9 +135,7 @@ const LectureModal = ({ open, setOpen, type, lec, refetch }) => {
     const loadData = async () => {
       const userdata = await fetchUser();
 
-      const filteruser = userdata
-        .filter((user) => user.branchId === Branc)
-        .filter((user) => user.role === "FACULTY");
+      const filteruser = userdata.filter((user) => user.role === "FACULTY");
       // const filtersubject = subjectdata.filter((sub) => sub.batch.branchId === Branc);
 
       let tok = JSON.parse(localStorage.getItem("user"));

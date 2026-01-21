@@ -1,4 +1,3 @@
-
 generator client {
   provider = "prisma-client-js"
 }
@@ -8,7 +7,6 @@ datasource db {
   url       = env("DATABASE_URL")
   directUrl = env("DIRECT_URL")
 }
-        
 
 model Branch {
   id   Int    @id @default(autoincrement())
@@ -24,6 +22,7 @@ model Branch {
   createdAt              DateTime                @default(now())
   // lectureSchedules LectureSchedule[]
   historicalFacultyDatas HistoricalFacultyData[]
+  facultyBranches        facultyBranch[]
 }
 
 model User {
@@ -46,7 +45,7 @@ model User {
   branchId Int?
   branch   Branch? @relation(fields: [branchId], references: [id])
 
-  isActive  Boolean @default(true)
+  isActive Boolean @default(true)
 
   facultySubjects    FacultySubject[]
   lectures           LectureSchedule[]
@@ -55,6 +54,7 @@ model User {
 
   createdAt              DateTime                @default(now())
   historicalFacultyDatas HistoricalFacultyData[]
+  facultyBranches        facultyBranch[]
 }
 
 model Subject {
@@ -236,6 +236,16 @@ model HistoricalStaffData {
   deficitHours Int?
   shiftStart   String?
   shiftEnd     String?
+}
+
+model facultyBranch {
+  id        Int    @id @default(autoincrement())
+  facultyId Int
+  branchId  Int
+  faculty   User   @relation(fields: [facultyId], references: [id])
+  branch    Branch @relation(fields: [branchId], references: [id])
+
+  @@unique([facultyId, branchId])
 }
 
 enum PenaltyType {

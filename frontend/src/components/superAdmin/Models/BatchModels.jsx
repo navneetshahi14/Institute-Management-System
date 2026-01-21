@@ -111,7 +111,6 @@ const BatchModels = ({ open, type, setOpen, branch, badmin, refetch }) => {
         `${mainRoute}/api/users/make-branch-admin`,
         {
           name: branchname,
-          code: batchcode,
           courseId: courseId,
         },
         {
@@ -143,8 +142,7 @@ const BatchModels = ({ open, type, setOpen, branch, badmin, refetch }) => {
         `${mainRoute}/api/batch/${branch.id}`,
         {
           name: branchname,
-          code: batchcode,
-          branchId: branchId,
+          branchId: courseId,
         },
         {
           headers: {
@@ -154,7 +152,7 @@ const BatchModels = ({ open, type, setOpen, branch, badmin, refetch }) => {
         }
       );
 
-      toast.success("edited successfully");
+      toast.success("Edited successfully");
       setOpen(false);
       // router.refresh();
       await refetch();
@@ -213,7 +211,7 @@ const BatchModels = ({ open, type, setOpen, branch, badmin, refetch }) => {
                     placeholder={"Batch Name"}
                   />
                 </div>
-                <div className="">
+                {/* <div className="">
                   <Label htmlFor="batchcode">Batch Code</Label>
                   <Input
                     id="batchcode"
@@ -221,7 +219,7 @@ const BatchModels = ({ open, type, setOpen, branch, badmin, refetch }) => {
                     type={`text`}
                     placeholder={"Batch Code"}
                   />
-                </div>
+                </div> */}
 
                 <div className="">
                   <Label htmlFor="branchId">Branch</Label>
@@ -323,7 +321,7 @@ const BatchModels = ({ open, type, setOpen, branch, badmin, refetch }) => {
                     value={branchname}
                   />
                 </div>
-                <div className="">
+                {/* <div className="">
                   <Label htmlFor="batchcode">Batch Code</Label>
                   <Input
                     id="batchcode"
@@ -332,7 +330,7 @@ const BatchModels = ({ open, type, setOpen, branch, badmin, refetch }) => {
                     placeholder={"Batch Code"}
                     value={batchcode}
                   />
-                </div>
+                </div> */}
 
                 <div className="">
                   <Label htmlFor="branchId">Branch</Label>

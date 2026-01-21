@@ -22,6 +22,9 @@ const BatchModels = ({ open, type, setOpen, branch, badmin, refetch }) => {
 
   const [list, setList] = useState([]);
   const [bId, setBId] = useState("");
+  const [courses, setCourses] = useState([]);
+  const [courseId, setCourseId] = useState("");
+
   useEffect(() => {
     if (branch?.name) {
       setBranchName(branch?.name);
@@ -29,8 +32,11 @@ const BatchModels = ({ open, type, setOpen, branch, badmin, refetch }) => {
     if (branch?.code) {
       setBatchCode(branch.code);
     }
-    if (branch?.id) {
-      setBId(branch?.id);
+    if (branch?.course?.branch?.id) {
+      setBId(branch?.course?.branch?.id);
+    }
+    if (branch?.course?.id) {
+      setCourseId(branch.course.id);
     }
   }, [branch]);
 
@@ -64,13 +70,13 @@ const BatchModels = ({ open, type, setOpen, branch, badmin, refetch }) => {
       const token = tok.data.token;
       const { data } = await axios.post(
         `${mainRoute}/api/batch`,
-        { name: branchname, code: batchcode, branchId: branchId },
+        { name: branchname, code: batchcode, courseId: courseId },
         {
           headers: {
             "Content-Type": "application/json",
             Authorization: `Bearer ${token}`,
           },
-        }
+        },
       );
       toast.success("Batch Created");
       setOpen(false);
@@ -101,7 +107,7 @@ const BatchModels = ({ open, type, setOpen, branch, badmin, refetch }) => {
             "Content-Type": "application/json",
             Authorization: `Bearer ${token}`,
           },
-        }
+        },
       );
 
       toast.success("Batch Created");
@@ -126,14 +132,14 @@ const BatchModels = ({ open, type, setOpen, branch, badmin, refetch }) => {
         {
           name: branchname,
           code: batchcode,
-          branchId: branchId,
+          branchId: courseId,
         },
         {
           headers: {
             "Content-Type": "application/json",
             Authorization: `Bearer ${token}`,
           },
-        }
+        },
       );
 
       toast.success("Edited Successfully");
@@ -195,7 +201,7 @@ const BatchModels = ({ open, type, setOpen, branch, badmin, refetch }) => {
                     placeholder={"Batch Name"}
                   />
                 </div>
-                <div className="">
+                {/* <div className="">
                   <Label htmlFor="batchcode">Batch Code</Label>
                   <Input
                     id="batchcode"
@@ -203,11 +209,27 @@ const BatchModels = ({ open, type, setOpen, branch, badmin, refetch }) => {
                     type={`text`}
                     placeholder={"Batch Code"}
                   />
-                </div>
+                </div> */}
 
                 <div className="">
                   <Label htmlFor="branchId">Branch</Label>
                   <Input type={`text`} readOnly value={bname} />
+                </div>
+
+                <div className="">
+                  <Label htmlFor="courseId">Course</Label>
+                  <Select onValueChange={(v) => setCourseId(v)} id="courseId">
+                    <SelectTrigger className={`w-full`}>
+                      <SelectValue placeholder="Course" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {courses.map((item, index) => (
+                        <SelectItem value={item.id} key={index}>
+                          {item.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
                 </div>
                 {/* <div>
                   <Label htmlFor="branchadmin">Branch Admin</Label>
@@ -292,6 +314,26 @@ const BatchModels = ({ open, type, setOpen, branch, badmin, refetch }) => {
                 <div className="">
                   <Label htmlFor="branchId">Branch</Label>
                   <Input type={`text`} readOnly value={bname} />
+                </div>
+
+                <div className="">
+                  <Label htmlFor="courseId">Course</Label>
+                  <Select
+                    value={courseId}
+                    onValueChange={(v) => setCourseId(v)}
+                    id="courseId"
+                  >
+                    <SelectTrigger className={`w-full`}>
+                      <SelectValue placeholder="Course" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {courses.map((item, index) => (
+                        <SelectItem value={item.id} key={index}>
+                          {item.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
                 </div>
 
                 <Button onClick={editBranch}>Edit Batch</Button>

@@ -37,7 +37,7 @@ const getBatchById = async (req, res) => {
 const updateBatch = async (req, res) => {
   try {
     const id = req.params.id
-    console.log(id)
+    console.log(req.body)
     const batch = await batchService.updateBatch(
       id,
       req.body

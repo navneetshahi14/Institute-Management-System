@@ -81,7 +81,9 @@ const SubjectModel = ({ open, setOpen, subject, type, refetch }) => {
     const loadData = async () => {
       const data = await fetchCourse();
 
-      setCourses(data);
+      const fetchedCourse = data.filter((course) => course.branchId === bran)
+
+      setCourses(fetchedCourse);
     };
 
     loadData();

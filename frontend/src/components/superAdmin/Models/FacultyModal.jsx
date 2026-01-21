@@ -55,7 +55,7 @@ const FacultyModal = ({ open, setOpen }) => {
     if (!isoIst) return "";
 
     // 🔥 remove Z so JS treats it as local time
-    const safeIso = isoIst.replace("Z", "");
+    const safeIso = isoIst;
 
     const date = new Date(safeIso);
 
@@ -121,18 +121,18 @@ const FacultyModal = ({ open, setOpen }) => {
     loadData();
   }, [selectedBranch]);
 
-  useEffect(() => {
-    if (!selectedBranch) {
-      setFilteredFaculty(users);
-      return;
-    }
+  // useEffect(() => {
+  //   if (!selectedBranch) {
+  //     setFilteredFaculty(users);
+  //     return;
+  //   }
 
-    const branchWiseFaculty = users.filter(
-      (user) => user.branchId === Number(selectedBranch),
-    );
+  //   const branchWiseFaculty = users.filter(
+  //     (user) => user.branchId === Number(selectedBranch),
+  //   );
 
-    setFilteredFaculty(branchWiseFaculty);
-  }, [selectedBranch, users]);
+  //   setFilteredFaculty(branchWiseFaculty);
+  // }, [selectedBranch, users]);
 
   useEffect(() => {
     if (!selectFaculty) {
@@ -266,8 +266,8 @@ const FacultyModal = ({ open, setOpen }) => {
     const date = lecture.startTime.split("T")[0];
 
     const result = calculateLectureBasedFaculty({
-      plannedStart: new Date(lecture.startTime.replace("Z","")),
-      plannedEnd: new Date(lecture.endTime.replace("Z","")),
+      plannedStart: new Date(lecture.startTime),
+      plannedEnd: new Date(lecture.endTime),
       actualStart: new Date(`${date}T${inTime}`),
       actualEnd: new Date(`${date}T${outTime}`),
       lectureRate: selectFaculty.lectureRate,

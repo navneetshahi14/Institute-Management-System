@@ -62,7 +62,10 @@ const getBatchById = async (id) => {
 const updateBatch = async (id, data) => {
   return await prisma.batch.update({
     where: { id: Number(id) },
-    data,
+    data:{
+      name:data.name,
+      courseId:data.branchId
+    },
   });
 };
 

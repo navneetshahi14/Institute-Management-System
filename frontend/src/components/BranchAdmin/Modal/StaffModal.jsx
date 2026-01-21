@@ -95,46 +95,6 @@ const StaffModal = ({ open, setOpen }) => {
 
   const THIRTY_MIN = 30 * 60 * 1000;
 
-  // const calculateStaffAttendanceUI = ({
-  //   shiftStart,
-  //   shiftEnd,
-  //   actualIn,
-  //   actualOut,
-  // }) => {
-  //   let isLate = false;
-  //   let overtimeMinutes = 0;
-  //   let overtimePay = 0;
-  //   let message = "On time";
-  //   let lateMinutes = 0;
-
-  //   if (actualIn > shiftStart) {
-  //     lateMinutes = Math.floor((actualIn - shiftStart) / (60 * 1000));
-
-  //     if (actualIn - shiftStart > THIRTY_MIN) {
-  //       isLate = true;
-  //       message = "Late Arrival";
-  //     }
-  //   }
-
-  //   if (actualOut && actualOut > shiftEnd) {
-  //     overtimeMinutes = Math.floor((actualOut - shiftEnd) / THIRTY_MIN) * 30;
-
-  //     overtimePay = (overtimeMinutes / 30) * 50;
-
-  //     if (overtimePay > 0) {
-  //       message = "Overtime Worked";
-  //     }
-  //   }
-
-  //   return {
-  //     isLate,
-  //     overtimeMinutes,
-  //     overtimePay,
-  //     message,
-  //     lateMinutes,
-  //   };
-  // };
-
   function calculateStaffAttendanceUI({
     monthlySalary,
     workingDays,
@@ -184,7 +144,7 @@ const StaffModal = ({ open, setOpen }) => {
     let additionalPenalty = 0;
 
     if (shortfallMinutes >= GRACE_MINUTES) {
-      const penaltyMinutes = shortfallMinutes - GRACE_MINUTES;
+      const penaltyMinutes = shortfallMinutes;
       additionalPenalty = penaltyMinutes * perMinuteRate;
     }
 

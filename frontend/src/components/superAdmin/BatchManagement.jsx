@@ -129,7 +129,7 @@ const BatchManagement = () => {
             })
           ) : (
             <div className="h-[50vh] flex justify-center items-center">
-              <p className="text-center my-5 text-xl">No Users</p>
+              <p className="text-center my-5 text-xl">No Batches</p>
             </div>
           )}
         </div>

@@ -9,73 +9,6 @@ const getDaysInCurrentMonth = () => {
   return new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate();
 };
 
-// function calculateStaffAttendance({
-//   shiftStartTime,
-//   shiftEndTime,
-//   actualInTime,
-//   actualOutTime,
-//   monthlySalary,
-//   workingMinutesPerDay,
-// }) {
-
-//   const workingDays = getDaysInCurrentMonth();
-
-//   const perMinuteRate = getPerMinuteRate(monthlySalary, workingMinutesPerDay,workingDays);
-
-//   // ⏰ Late calculation
-//   let lateMinutes = Math.max(
-//     0,
-//     Math.floor((actualInTime - shiftStartTime) / (1000 * 60))
-//   );
-
-//   let isLate = false;
-//   let fixedPenalty = 0;
-//   let extraPenalty = 0;
-
-//   if (lateMinutes > 15) {
-//     isLate = true;
-//     fixedPenalty = 50;
-
-//     // shift extension check
-//     const expectedExtendedEnd = new Date(
-//       shiftEndTime.getTime() + lateMinutes * 60000
-//     );
-
-//     if (!actualOutTime || actualOutTime < expectedExtendedEnd) {
-//       const unextendedMinutes = Math.max(
-//         0,
-//         Math.floor(
-//           (expectedExtendedEnd - (actualOutTime || shiftEndTime)) / (1000 * 60)
-//         )
-//       );
-//       extraPenalty = Math.floor(unextendedMinutes * perMinuteRate);
-//     }
-//   }
-
-//   // ⏱️ Overtime (starts AFTER 30 min)
-//   let overtimeMinutes = 0;
-//   let overtimePay = 0;
-
-//   if (actualOutTime) {
-//     const overtimeRaw =
-//       Math.floor((actualOutTime - shiftEndTime) / (1000 * 60)) - 30;
-
-//     if (overtimeRaw > 0) {
-//       overtimeMinutes = overtimeRaw;
-//       overtimePay = Math.floor(overtimeMinutes * perMinuteRate);
-//     }
-//   }
-
-//   return {
-//     lateMinutes,
-//     isLate,
-//     fixedPenalty,
-//     extraPenalty,
-//     overtimeMinutes,
-//     overtimePay,
-//   };
-// }
-
 function calculateStaffAttendance({
   shiftStartTime,
   actualInTime,
@@ -113,7 +46,7 @@ function calculateStaffAttendance({
   let extraPenalty = 0;
 
   if (shortfallMinutes > GRACE_MINUTES) {
-    const penaltyMinutes = shortfallMinutes - GRACE_MINUTES;
+    const penaltyMinutes = shortfallMinutes;
     extraPenalty = Number((penaltyMinutes * perMinuteRate).toFixed(2));
   }
 
