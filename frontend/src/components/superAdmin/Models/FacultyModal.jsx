@@ -216,7 +216,9 @@ const FacultyModal = ({ open, setOpen }) => {
     else if (isLate) penalty = "LATE_START";
     else if (isEarly) penalty = "EARLY_END";
 
-    let totalPenaltyMin = LateMin + EarlyMin;
+    let TotalP = LateMin + EarlyMin
+
+    let totalPenaltyMin = TotalP > FIFTEEN_MIN ? TotalP : 0;
 
     const workedMinutes = Math.max(
       0,
@@ -224,7 +226,6 @@ const FacultyModal = ({ open, setOpen }) => {
     );
 
     const lectureEquivalent = workedMinutes / LECTURE_MINUTES;
-    console.log(lectureEquivalent);
 
     const calculatedPayout =
       lectureEquivalent > 1
@@ -542,7 +543,7 @@ const FacultyModal = ({ open, setOpen }) => {
                       type={`text`}
                       placeholder={`Penalty`}
                       value={
-                        `${penaltyPreview.totalPenaltyMin} mins` ||
+                        `${penaltyPreview?.totalPenaltyMin} mins` ||
                         "0"
                       }
                       readOnly
