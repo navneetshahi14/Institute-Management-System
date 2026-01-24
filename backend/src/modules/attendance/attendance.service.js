@@ -67,21 +67,23 @@ function calculateLectureBasedFacultyBackend({
   const actualStartTime = new Date(actualStart);
   const actualEndTime = new Date(actualEnd);
 
-  console.log(actualStartTime - plannedStartTime)
+  console.log(actualStartTime - plannedStartTime);
 
   // ---------- PENALTY LABEL ----------
   const lateMinutes = Math.max(
     0,
-    (actualStartTime - plannedStartTime) / (1000 * 60)
+    (actualStartTime - plannedStartTime) / (1000 * 60),
   );
 
   const earlyMinutes = Math.max(
     0,
-    (plannedEndTime - actualEndTime) / (1000 * 60)
+    (plannedEndTime - actualEndTime) / (1000 * 60),
   );
 
-  const isLate = lateMinutes > FIFTEEN_MIN;
-  const isEarly = earlyMinutes > FIFTEEN_MIN;
+  let isLate = actualStart - plannedStart > FIFTEEN_MIN;
+  let LateMin = (actualStart - plannedStart) / (60 * 1000);
+  let isEarly = plannedEnd - actualEnd > FIFTEEN_MIN;
+  let EarlyMin = (plannedEnd - actualEnd) / (60 * 1000);
 
   let penalty = "NONE";
   if (isLate && isEarly) penalty = "BOTH";
@@ -93,6 +95,8 @@ function calculateLectureBasedFacultyBackend({
   if (actualEndTime > actualStartTime) {
     workedMinutes = Math.floor((actualEndTime - actualStartTime) / (1000 * 60));
   }
+
+  let totalPenaltyMin = LateMin + EarlyMin;
 
   // ---------- PAYOUT ----------
   let lectureEquivalent = workedMinutes / LECTURE_MINUTES;
@@ -112,6 +116,7 @@ function calculateLectureBasedFacultyBackend({
     workedMinutes,
     lectureEquivalent: Number(lectureEquivalent.toFixed(2)),
     payout,
+    totalPenaltyMin,
   };
 }
 
@@ -120,7 +125,7 @@ const markLectureAttendance = async ({
   actualStartTime,
   actualEndTime,
   status,
-  date
+  date,
 }) => {
   const lecture = await prisma.lectureSchedule.findUnique({
     where: { id: lectureId },
@@ -128,12 +133,12 @@ const markLectureAttendance = async ({
       faculty: true,
     },
   });
-  console.log(lecture)
 
   if (!lecture) throw new Error("Lecture not found");
 
   let penalty = "NONE";
   let payout = 0;
+  let penaltyMin = 0;
 
   if (status === "CANCELLED") {
     if (lecture.faculty.facultyType === "LECTURE_BASED") {
@@ -146,17 +151,15 @@ const markLectureAttendance = async ({
     penalty = "NONE";
   } else {
     penalty = calculateLectureBasedFacultyBackend({
-      plannedStart:lecture.startTime,
-      plannedEnd:lecture.endTime,
-      actualStart:actualStartTime,
-      actualEnd:actualEndTime,
-      lectureRate:Number(lecture.faculty.lectureRate),
+      plannedStart: lecture.startTime,
+      plannedEnd: lecture.endTime,
+      actualStart: actualStartTime,
+      actualEnd: actualEndTime,
+      lectureRate: Number(lecture.faculty.lectureRate),
       status,
     });
-    console.log(penalty)
 
     if (lecture.faculty.facultyType === "LECTURE_BASED") {
-      console.log(penalty)
       const durationMinutes =
         (new Date(actualEndTime) - new Date(actualStartTime)) / (1000 * 60);
 
@@ -164,27 +167,28 @@ const markLectureAttendance = async ({
       const baseHours = 2;
 
       payout = penalty.payout;
+      penaltyMin = penalty.totalPenaltyMin;
     }
   }
 
-
-  const data =  await prisma.lectureAttendance.create({
+  const data = await prisma.lectureAttendance.create({
     data: {
       // lectureId:lectureId,
-      lecture:{
-        connect:{
-          id: lectureId
-        }
+      lecture: {
+        connect: {
+          id: lectureId,
+        },
       },
       actualStartTime,
       actualEndTime,
-      penalty:penalty.penalty,
-      payout:payout !== NaN ? payout : 0,
+      penalty: penalty.penalty,
+      payout: payout !== NaN ? payout : 0,
       status,
-      date: date
+      date: date,
+      penaltyMin:Number(penaltyMin)
     },
   });
-  return data
+  return data;
 };
 
 const getFacultyMonthlySummary = async (facultyId, month, year) => {
@@ -382,10 +386,10 @@ const markSalaryBasedFacultyAttendance = async ({
       workingMinutes: workingMintues,
     },
     create: {
-      faculty:{
-        connect:{
-          id:facultyId
-        }
+      faculty: {
+        connect: {
+          id: facultyId,
+        },
       },
       date: attendanceDate,
       inTime: isLeave ? null : aInTime,

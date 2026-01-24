@@ -57,7 +57,7 @@ const FacultyModal = ({ open, setOpen }) => {
     // 🔥 remove Z so JS treats it as local time
     const safeIso = isoIst;
 
-    const date = new Date(safeIso.replace("Z",""));
+    const date = new Date(safeIso.replace("Z", ""));
 
     return date.toLocaleTimeString("en-IN", {
       hour: "numeric",
@@ -114,7 +114,9 @@ const FacultyModal = ({ open, setOpen }) => {
   useEffect(() => {
     const loadData = async () => {
       const userData = await fetchUser();
-      const facultyOnly = userData.filter((user) => user.role === "FACULTY").filter((user) => user.isActive === true);
+      const facultyOnly = userData
+        .filter((user) => user.role === "FACULTY")
+        .filter((user) => user.isActive === true);
       setUsers(facultyOnly);
       setFilteredFaculty(facultyOnly);
     };
@@ -204,14 +206,17 @@ const FacultyModal = ({ open, setOpen }) => {
   }) {
     const FIFTEEN_MIN = 15 * 60 * 1000;
 
-
     let isLate = actualStart - plannedStart > FIFTEEN_MIN;
+    let LateMin = (actualStart - plannedStart) / (60 * 1000);
     let isEarly = plannedEnd - actualEnd > FIFTEEN_MIN;
+    let EarlyMin = (plannedEnd - actualEnd) / (60 * 1000);
 
     let penalty = "NONE";
     if (isLate && isEarly) penalty = "BOTH";
     else if (isLate) penalty = "LATE_START";
     else if (isEarly) penalty = "EARLY_END";
+
+    let totalPenaltyMin = LateMin + EarlyMin;
 
     const workedMinutes = Math.max(
       0,
@@ -231,6 +236,7 @@ const FacultyModal = ({ open, setOpen }) => {
       workedMinutes,
       lectureEquivalent: Number(lectureEquivalent.toFixed(2)),
       calculatedPayout,
+      totalPenaltyMin,
       message:
         penalty === "NONE"
           ? "On Time"
@@ -247,26 +253,21 @@ const FacultyModal = ({ open, setOpen }) => {
   const [penaltyPreview, setPenaltyPreview] = useState(null);
 
   function applyStatusOnPayout(calculatedPayout, status) {
+    console.log("Called");
+
     if (status === "MISSED") return 0;
     if (status === "CANCELLED") return calculatedPayout / 2;
     return calculatedPayout; // CONDUCTED
   }
 
   useEffect(() => {
-    if (
-      !lecture.startTime ||
-      !lecture.endTime ||
-      !inTime ||
-      !outTime ||
-      !status
-    )
-      return;
+    if (!lecture.startTime || !lecture.endTime || !status) return;
 
     const date = lecture.startTime.split("T")[0];
 
     const result = calculateLectureBasedFaculty({
-      plannedStart: new Date(lecture.startTime.replace("Z","")),
-      plannedEnd: new Date(lecture.endTime.replace("Z","")),
+      plannedStart: new Date(lecture.startTime.replace("Z", "")),
+      plannedEnd: new Date(lecture.endTime.replace("Z", "")),
       actualStart: new Date(`${date}T${inTime}`),
       actualEnd: new Date(`${date}T${outTime}`),
       lectureRate: selectFaculty.lectureRate,
@@ -276,7 +277,7 @@ const FacultyModal = ({ open, setOpen }) => {
 
     setPenaltyPreview(result);
     setPayout(finalPayout);
-  }, [lecture, inTime, outTime, status]);
+  }, [lecture, status, inTime, outTime]);
 
   useEffect(() => {
     if (facultyType === "SALARY_BASED") {
@@ -540,7 +541,10 @@ const FacultyModal = ({ open, setOpen }) => {
                     <Input
                       type={`text`}
                       placeholder={`Penalty`}
-                      value={penaltyPreview?.message || "0"}
+                      value={
+                        `${penaltyPreview.totalPenaltyMin} mins` ||
+                        "0"
+                      }
                       readOnly
                     />
                   </div>

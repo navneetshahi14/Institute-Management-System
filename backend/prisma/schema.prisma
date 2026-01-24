@@ -114,6 +114,7 @@ model LectureAttendance {
   status          StatusType  @default(CONDUCTED)
   payout          Int         @default(0)
   penalty         PenaltyType @default(NONE)
+  penaltyMin      Int @default(0)
 
   lecture LectureSchedule @relation(fields: [lectureId], references: [id])
 

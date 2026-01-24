@@ -15,14 +15,20 @@ const AllAttendance = ({ open, setOpen, userdata, mon, yea }) => {
       year: "numeric",
     });
 
-  const formatTime = (iso) => {
-    if (iso === "") return;
-    return new Date(iso).toLocaleTimeString("en-IN", {
+  function formatTime(isoIst) {
+    if (!isoIst) return "";
+
+    // 🔥 remove Z so JS treats it as local time
+    const safeIso = isoIst;
+
+    const date = new Date(safeIso.replace("Z",""));
+
+    return date.toLocaleTimeString("en-IN", {
       hour: "numeric",
       minute: "2-digit",
       hour12: true,
     });
-  };
+  }
 
   const getStatus = (lecture) => {
     const attendance = lecture.attendance?.[0];
