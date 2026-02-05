@@ -53,7 +53,7 @@ function calculateStaffAttendance({
   // -------- OVERTIME --------
   const extraMinutes = Math.max(0, actualWorkedMinutes - requiredMinutes);
 
-  const overtimeMinutes = Math.floor(extraMinutes);
+  const overtimeMinutes = Math.floor(extraMinutes) >= 30 ? Math.floor(extraMinutes) : 0;
   const overtimePay =
     overtimeMinutes >= 30 ? Math.floor(overtimeMinutes * perMinuteRate) : 0;
 

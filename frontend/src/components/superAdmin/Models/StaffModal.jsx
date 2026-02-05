@@ -114,52 +114,39 @@ const StaffModal = ({ open, setOpen }) => {
       return null;
     }
 
-    console.log(1);
     const totalMonthlyMinutes = workingDays * workingMinutesPerDay;
-    console.log(2);
     const perMinuteRate = monthlySalary / totalMonthlyMinutes;
-    console.log(3);
 
     // ---- BASIC CALCS ----
     const actualWorkedMinutes = Math.floor(
       (actualOut - actualIn) / (1000 * 60),
     );
-    console.log(4);
 
     const requiredMinutes = workingMinutesPerDay;
-    console.log(5);
 
     // ---- LATE START ----
     const lateMinutes = Math.max(
       0,
       Math.floor((actualIn - scheduledIn) / (1000 * 60)),
     );
-    console.log(6);
 
     const isLateBeyondGrace = lateMinutes > GRACE_MINUTES;
-    console.log(7);
 
     // ---- SHORTFALL ----
     const shortfallMinutes = Math.max(0, requiredMinutes - actualWorkedMinutes);
-    console.log(8);
 
     // ---- OVERTIME ----
     const extraMinutes = Math.max(0, actualWorkedMinutes - requiredMinutes);
-    console.log(9);
 
-    const overtimeMinutes = Math.floor(extraMinutes);
-    console.log(10);
+    const overtimeMinutes =
+      Math.floor(extraMinutes) >= 30 ? Math.floor(extraMinutes) : 0;
 
     const overtimePay =
       overtimeMinutes >= 30 ? Math.floor(overtimeMinutes * perMinuteRate) : 0;
 
-    console.log(11);
-
     // ---- PENALTY ----
     let fixedPenalty =
       isLateBeyondGrace || shortfallMinutes > 15 ? FIXED_PENALTY : 0;
-
-    console.log(12);
 
     let additionalPenalty = 0;
     console.log(13);
@@ -196,8 +183,8 @@ const StaffModal = ({ open, setOpen }) => {
     if (!startTime || !endTime || !actualinTime || !actualoutTime) return;
     const start = startTime.split("T")[0];
     const end = endTime.split("T")[0];
-    let s = startTime.replace("Z","")
-    let e = endTime.replace("Z","")
+    let s = startTime.replace("Z", "");
+    let e = endTime.replace("Z", "");
 
     const workingDays = getDaysInCurrentMonth();
     console.log(
