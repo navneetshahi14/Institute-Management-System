@@ -130,7 +130,7 @@ const StaffModal = ({ open, setOpen }) => {
       Math.floor((actualIn - scheduledIn) / (1000 * 60)),
     );
 
-    const isLateBeyondGrace = lateMinutes > GRACE_MINUTES;
+    const isLateBeyondGrace = lateMinutes > GRACE_MINUTES ? true : false;
 
     // ---- SHORTFALL ----
     const shortfallMinutes = Math.max(0, requiredMinutes - actualWorkedMinutes);
@@ -146,19 +146,16 @@ const StaffModal = ({ open, setOpen }) => {
 
     // ---- PENALTY ----
     let fixedPenalty =
-      isLateBeyondGrace || shortfallMinutes > 15 ? FIXED_PENALTY : 0;
+      isLateBeyondGrace ? FIXED_PENALTY : 0;
 
     let additionalPenalty = 0;
-    console.log(13);
 
     if (shortfallMinutes > GRACE_MINUTES) {
       const penaltyMinutes = shortfallMinutes;
       additionalPenalty = penaltyMinutes * perMinuteRate;
     }
-    console.log(13);
 
     const totalPenalty = fixedPenalty + additionalPenalty;
-    console.log(14);
 
     return {
       requiredMinutes,

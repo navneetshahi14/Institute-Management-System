@@ -41,7 +41,7 @@ function calculateStaffAttendance({
   const shortfallMinutes = Math.max(0, requiredMinutes - actualWorkedMinutes);
 
   const isLate = lateMinutes > GRACE_MINUTES;
-  const fixedPenalty = isLate || shortfallMinutes > 15 ? FIXED_PENALTY : 0;
+  const fixedPenalty = isLate ? FIXED_PENALTY : 0;
 
   let extraPenalty = 0;
 
